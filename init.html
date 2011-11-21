@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<link rel="stylesheet" href="css/base.css" type="text/css" media="screen" title="no title" charset="utf-8">
+<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript" charset="utf-8">
+
+	$(document).ready(function() {
+		// Start with google form
+		
+	});
+	
+	function show_uploadform(auth) {
+		$("#Simple-Chrome-Login").hide();
+		$("#Picasa-Upload").show();
+	}
+
+	// /*
+	// *	For testing only: Login to google without OAuth
+	// * 	TODO remove
+	// */
+	// function gSimpleLogin() {
+	// 	var username = $("#username").val();
+	// 	var password = $("#password").val();
+	// 	$("#foo").text = username + " asdfsdf " + password;
+	// 	// Send login request
+	// 	var xhr = new XMLHttpRequest();
+	// 	var _appname = "de.oliverguenther-broadmask-0.0.1";
+	// 	var params="accountType=GOOGLE&Email=" + username + "&Passwd=" + password + "&service=lh2&source=" + _appname;
+	// 	var auth = "";
+	// 	xhr.open("POST", " https://www.google.com/accounts/ClientLogin", true);
+	// 	xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	// 	xhr.onreadystatechange = function() {
+	// 	  if (xhr.readyState == 4) {
+	// 			var response = xhr.responseText;
+	// 			var rgx = /auth=(.+)/i;
+	// 			var auth = rgx.exec(response);
+	// 			$("#foo").text = "Logged in! auth is **" + auth[1] + "**";
+	// 			show_uploadform(auth);
+	// 	  }
+	// 	}
+	// 	xhr.send(params);
+	// 	return false;
+	// }
+	
+	function gAuth() {
+		var bg = chrome.extension.getBackgroundPage();
+		bg.googleLogin();
+	}
+</script>
+<head>
+	<meta charset="utf-8" />
+	<title>Broadmask</title>
+</head>
+<body>
+	<div id="foo">
+		
+	</div>
+	<div id="Simple-Chrome-Login">
+		<h2>Login to Google</h2>
+		<!-- TODO OAuth -->
+		<p>
+			You will need to login to your Google Account prior to using this app.<br/>
+			This button will redirect you to google in order to link your account to this app.
+		</p>
+		<p><input type="button" onclick="return gAuth()" value="Login"></p>
+	</div>
+	<div id="Picasa-Upload">
+		<form method="POST" accept-charset="utf-8">
+			<p>
+				<label for="file">File</label>
+				<input type="file" name="file" id="file"/>
+			</p>
+			<p><input type="submit" value="Continue &rarr;"></p>
+		</form>
+	</div>
+</body>
+</html>

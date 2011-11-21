@@ -1,0 +1,28 @@
+<html>
+	<head>
+		<script src="js/chrome_ex_oauth.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/chrome_ex_oauth_simple.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" charset="utf-8">
+			var oauth = ChromeExOAuth.initBackgroundPage({
+			  'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
+			  'authorize_url': 'https://www.google.com/accounts/OAuthAuthorizeToken',
+			  'access_url': 'https://www.google.com/accounts/OAuthGetAccessToken',
+			  'consumer_key': 'anonymous',
+			  'consumer_secret': 'anonymous',
+			  'scope': 'https://picasaweb.google.com/data/',
+			  'app_name': 'BroadMask'
+			});
+			
+			function logout() {
+	        	oauth.clearTokens();
+	      	};
+		</script>
+	</head>	
+<body>
+	<!-- <embed name="broadmask" id="broadmask" width=0 height=0 type="application/x-nacl-srpc" onload="moduleDidLoad()"/>
+	<script type="text/javascript">
+		var nexes = 'x86-32: braodmask/braodmask_x86_32.nexe';
+		document.getElementById('broadmask').nexes = nexes;
+	</script> -->
+</body>
+</html>

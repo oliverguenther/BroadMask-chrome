@@ -1,0 +1,18 @@
+{
+	"name": "Broadmask Facebook Decrypt",
+	"version": "0.1",
+	"description": "Bringing Pairing based Cryptography to Facebook",
+	"icons": { "128": "icon.png" },
+	"background_page": "background.html",
+	"browser_action": {
+	    "default_icon": "icon.png",
+		"popup": "init.html"
+	  },
+	  "permissions": [
+		"tabs",
+	    "http://facebook.com/*",
+	    "https://facebook.com/*",
+	    "https://picasaweb.google.com/*",
+	    "https://www.google.com/*"
+	  ]
+}
