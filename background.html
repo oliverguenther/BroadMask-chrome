@@ -9,13 +9,15 @@
 			  'access_url': 'https://www.google.com/accounts/OAuthGetAccessToken',
 			  'consumer_key': 'anonymous',
 			  'consumer_secret': 'anonymous',
-			  'scope': 'https://picasaweb.google.com/data/',
+			  'scope': 'https://picasaweb.google.com/data',
 			  'app_name': 'BroadMask'
 			});
 			
-			function logout() {
-	        	oauth.clearTokens();
-	      	};
+			chrome.browserAction.onClicked.addListener(function(tab) {
+			    chrome.tabs.create({'url': chrome.extension.getURL('init.html')}, function(tab) {
+			    });
+			});
+			
 		</script>
 	</head>	
 <body>

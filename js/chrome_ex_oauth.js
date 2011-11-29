@@ -293,6 +293,7 @@ ChromeExOAuth.sendRequest = function(method, url, headers, body, callback) {
   xhr.open(method, url, true);
   if (headers) {
     for (var header in headers) {
+      chrome.extension.getBackgroundPage().console.log('Adding header' + header);
       if (headers.hasOwnProperty(header)) {
         xhr.setRequestHeader(header, headers[header]);
       }

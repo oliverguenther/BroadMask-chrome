@@ -1,77 +1,88 @@
 <!DOCTYPE html>
 <html>
-<link rel="stylesheet" href="css/base.css" type="text/css" media="screen" title="no title" charset="utf-8">
-<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
-<script type="text/javascript" charset="utf-8">
+<head>
+	<link rel="stylesheet" href="css/bootstrap.css" type="text/css" charset="utf-8"/>
+	<link rel="stylesheet" href="css/base.css" type="text/css" charset="utf-8"/>
+	<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/pwa.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript" charset="utf-8">
 
 	$(document).ready(function() {
-		// Start with google form
-		
-	});
-	
-	function show_uploadform(auth) {
-		$("#Simple-Chrome-Login").hide();
-		$("#Picasa-Upload").show();
-	}
+		// test localstorage for token
+		var oauth = chrome.extension.getBackgroundPage().oauth;
+		if (oauth.hasToken()) {
+			chrome.extension.getBackgroundPage().console.log("asdf");
+			show_uploadform();
+		}
+		// Setup handler
+		var dropZone = document.getElementById('dropzone');
+		dropZone.addEventListener('dragover', handleDragOver, false);
+		dropZone.addEventListener('drop', handleFileDrop, false);
+		document.getElementById('file').addEventListener('change', handleFileSelect, false);
 
-	// /*
-	// *	For testing only: Login to google without OAuth
-	// * 	TODO remove
-	// */
-	// function gSimpleLogin() {
-	// 	var username = $("#username").val();
-	// 	var password = $("#password").val();
-	// 	$("#foo").text = username + " asdfsdf " + password;
-	// 	// Send login request
-	// 	var xhr = new XMLHttpRequest();
-	// 	var _appname = "de.oliverguenther-broadmask-0.0.1";
-	// 	var params="accountType=GOOGLE&Email=" + username + "&Passwd=" + password + "&service=lh2&source=" + _appname;
-	// 	var auth = "";
-	// 	xhr.open("POST", " https://www.google.com/accounts/ClientLogin", true);
-	// 	xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-	// 	xhr.onreadystatechange = function() {
-	// 	  if (xhr.readyState == 4) {
-	// 			var response = xhr.responseText;
-	// 			var rgx = /auth=(.+)/i;
-	// 			var auth = rgx.exec(response);
-	// 			$("#foo").text = "Logged in! auth is **" + auth[1] + "**";
-	// 			show_uploadform(auth);
-	// 	  }
-	// 	}
-	// 	xhr.send(params);
-	// 	return false;
-	// }
-	
-	function gAuth() {
-		var bg = chrome.extension.getBackgroundPage();
-		bg.googleLogin();
-	}
-</script>
+	});
+	</script>
 <head>
 	<meta charset="utf-8" />
 	<title>Broadmask</title>
 </head>
-<body>
-	<div id="foo">
-		
-	</div>
-	<div id="Simple-Chrome-Login">
-		<h2>Login to Google</h2>
-		<!-- TODO OAuth -->
-		<p>
-			You will need to login to your Google Account prior to using this app.<br/>
-			This button will redirect you to google in order to link your account to this app.
-		</p>
-		<p><input type="button" onclick="return gAuth()" value="Login"></p>
-	</div>
-	<div id="Picasa-Upload">
-		<form method="POST" accept-charset="utf-8">
-			<p>
-				<label for="file">File</label>
-				<input type="file" name="file" id="file"/>
-			</p>
-			<p><input type="submit" value="Continue &rarr;"></p>
-		</form>
-	</div>
-</body>
+  <body>
+
+    <div class="topbar">
+      <div class="fill">
+        <div class="container">
+          <a class="brand" href="#">BroadMask</a>
+          <ul class="nav">
+            <li><a href="#help">Help</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="content">
+        <div class="page-header">
+          <h1>BroadMask <small>Broadcast Encryption for Image Sharing in Online Social Networks</small></h1>
+        </div>
+        <div class="row">
+          <div class="span10">
+            <div id="Simple-Chrome-Login">
+				<h2>Google Authorization</h2>
+				<p>
+					You need to authorize BroadMask prior to using it by logging in to your Google Account.<br/>
+					This button will redirect you to google in order to link your account to this app.
+				</p>
+				<p><input type="button" class="btn large primary" onclick="return gAuth()" value="Login"></p>
+			</div>
+			<div id="Picasa-Upload" class="row">
+				<div class="span9">
+					<p>Welcome back! You're currently logged in to your Google account. <a href="javascript:logout()">Log me out!</a></p>
+				</div>
+				<div id="filechoose" class="span5">
+					<p>Press this button to select a file to upload..</p>
+					<input type="file" id="file" multiple></input>
+				</div>
+				<div class="span4">
+					<div id="dropzone">
+						.. or drag a picture here to upload it to Picasa WebAlbums.
+					</div>
+				</div>
+			</div>
+          </div>
+          <div class="span4">
+            <h3>Note</h3>
+			<p>This extension uses Pairing-based Cryptography to share images to set of users.</p>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        <p>Design from <a href="http://twitter.github.com/bootstrap">Bootstrap</a></p>
+      </footer>
+
+    </div> <!-- /container -->
+
+  </body>
 </html>
