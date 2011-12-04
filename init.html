@@ -1,88 +1,171 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<link rel="stylesheet" href="css/bootstrap.css" type="text/css" charset="utf-8"/>
-	<link rel="stylesheet" href="css/base.css" type="text/css" charset="utf-8"/>
-	<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/pwa.js" type="text/javascript" charset="utf-8"></script>
-	<script type="text/javascript" charset="utf-8">
+	<head>
+		<link rel="stylesheet" href="css/bootstrap.css" type="text/css" charset="utf-8"/>
+		<link rel="stylesheet" href="css/base.css" type="text/css" charset="utf-8"/>
+		<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/bootstrap-scrollspy.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/bootstrap-buttons.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/pwa.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/gpg.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/fb.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/util.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" charset="utf-8">
+			$(document).ready(function() {
+				// Setup bootstrap scrollspy
+				$('body > .topbar').scrollSpy()
+				// test localstorage for Google token
+				var oauth = chrome.extension.getBackgroundPage().oauth;
+				if (oauth.hasToken()) {
+					$("#gloginbtn").toggleClass("success primary disabled");
+					$("#glogoutbtn").show();
+					$("#gloginbtn").attr("value", "authorized");						
+				}
+				// test localstorage for FB token
+				if (localStorage.fbtoken) {
+					$("#fbloginbtn").toggleClass("success primary disabled");
+					$("#fblogoutbtn").show();
+					$("#fbloginbtn").attr("value", "authorized");
+				}
+				// Enable Picasa upload form when both allowed
+				if (oauth.hasToken() && localStorage.fbtoken) {
+					$("#Picasa-Upload").show();
+				}
 
-	$(document).ready(function() {
-		// test localstorage for token
-		var oauth = chrome.extension.getBackgroundPage().oauth;
-		if (oauth.hasToken()) {
-			chrome.extension.getBackgroundPage().console.log("asdf");
-			show_uploadform();
-		}
-		// Setup handler
-		var dropZone = document.getElementById('dropzone');
-		dropZone.addEventListener('dragover', handleDragOver, false);
-		dropZone.addEventListener('drop', handleFileDrop, false);
-		document.getElementById('file').addEventListener('change', handleFileSelect, false);
+				// Test localstorage for friendslist
+				if (localStorage.friendlists) {
+					displayFriendlist();
+				}
+				// Setup handler
+				var dropZone = document.getElementById('dropzone');
+				dropZone.addEventListener('dragover', handleDragOver, false);
+				dropZone.addEventListener('drop', handleFileDrop, false);
+				document.getElementById('file').addEventListener('change', handleFileSelect, false);
 
-	});
-	</script>
-<head>
-	<meta charset="utf-8" />
-	<title>Broadmask</title>
-</head>
-  <body>
 
-    <div class="topbar">
-      <div class="fill">
-        <div class="container">
-          <a class="brand" href="#">BroadMask</a>
-          <ul class="nav">
-            <li><a href="#help">Help</a></li>
-            <li><a href="#contact">Contact</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
+			});
 
-    <div class="container">
+			// Called when FB SDK ready
+			window.fbAsyncInit = function() {
+				FB.init({
+					appId      : '281109321931593',
+					status     : true,
+					cookie     : true,
+					oauth      : true,
+					xfbml      : true 
+				});
+				// Test if user logged into FB
+				FB.getLoginStatus(function(response) {
+					if (response.authResponse) {
+					} else {
+						delete localStorage.fbtoken;
+					}
+				});
+			};
 
-      <div class="content">
-        <div class="page-header">
-          <h1>BroadMask <small>Broadcast Encryption for Image Sharing in Online Social Networks</small></h1>
-        </div>
-        <div class="row">
-          <div class="span10">
-            <div id="Simple-Chrome-Login">
-				<h2>Google Authorization</h2>
-				<p>
-					You need to authorize BroadMask prior to using it by logging in to your Google Account.<br/>
-					This button will redirect you to google in order to link your account to this app.
-				</p>
-				<p><input type="button" class="btn large primary" onclick="return gAuth()" value="Login"></p>
-			</div>
-			<div id="Picasa-Upload" class="row">
-				<div class="span9">
-					<p>Welcome back! You're currently logged in to your Google account. <a href="javascript:logout()">Log me out!</a></p>
-				</div>
-				<div id="filechoose" class="span5">
-					<p>Press this button to select a file to upload..</p>
-					<input type="file" id="file" multiple></input>
-				</div>
-				<div class="span4">
-					<div id="dropzone">
-						.. or drag a picture here to upload it to Picasa WebAlbums.
+			// Load FB SDK
+			(function(d){
+				var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
+				js = d.createElement('script'); js.id = id; js.async = true;
+				js.src = "https://connect.facebook.net/de_DE/all.js";
+				d.getElementsByTagName('head')[0].appendChild(js);
+			}(document));
+		</script>
+		<head>
+			<meta charset="utf-8" />
+			<title>Broadmask</title>
+		</head>
+		<body>
+			<div id="fb-root"></div>
+			<div class="topbar" data-scrollspy="scrollspy">
+				<div class="fill">
+					<div class="container">
+						<a class="brand" href="#">BroadMask</a>
+						<ul class="nav">
+							<li><a href="#help">Help</a></li>
+							<li><a href="#contact">Contact</a></li>
+						</ul>
 					</div>
 				</div>
 			</div>
-          </div>
-          <div class="span4">
-            <h3>Note</h3>
-			<p>This extension uses Pairing-based Cryptography to share images to set of users.</p>
-          </div>
-        </div>
-      </div>
+			<div class="container">
+				<div class="content">
+					<div class="page-header">
+						<h1>BroadMask <small>Leveraging Broadcast Encryption for Content Sharing in Online Social Networks</small></h1>
+					</div>
+					<div class="row">
+						<div class="span12">
+							<div class="alert-message" id="errormsg" style="display:none"></div>
+						</div>
+						<div class="span12">
+							<div id="Simple-Chrome-Login">
+								<h2>Google Authorization</h2>
+								<p>
+								In order to use the Image Sharing feature, you need a Picasa Webalbums Account linked to your Google account. You can authorize BroadMask to access your Account here.<br/>
+								This button will redirect you to google in order to link your account to this app.
+								</p>
+								<p><input type="button" id="gloginbtn" class="btn primary" onclick="return gAuth()" value="Login">
+								<input style="display:hidden;" type="button" id="glogoutbtn" class="btn small danger" onclick="return gLogout()" value="Revoke"></p>
+								<h2>Facebook Authorization</h2>
+								<p>
+								To use BroadMask services within your Facebook account, you'll need to authorize it to access your notes and friendlists.
+								</p>
+								<p><input type="button" id="fbloginbtn" class="btn primary" onclick="return fbAuth()" value="Login">
+								<input style="display:hidden;" type="button" id="fblogoutbtn" class="btn small danger" onclick="return fbLogout()" value="Revoke"></p>
+							</div>
+							<div id="row">
+								<hr/>
+							</div>
+							<div id="Picasa-Upload" class="row">
+								<div class="span10">
+									<div class="alert-message block-message success">
+										<p>
+										<strong>You are now logged in</strong><br/>
+										You have successfully configured BroadMask and are now ready to use the Plugin!
+										<ul>
+											<li>Select your friendlist from the picker to define the group you're sharing with</li>
+											<li>Select one or multiple images using the button below, or drag&amp;drop some images on the designated area</li>
+											<li>The files will be encrypted and immediately uploaded to your picasa account</li>
+											<li>From there on, the chosen friends will be notified of the pictures</li>
+										</ul>
+										</p>
+									</div>
+								</div>
+								<div class="span6" id="friends">
+									<p>
+									You're friendlists have not yet been fetched	
+									</p>
+								</div>
+								<div class="span7 offset3">
+									<p>
+									  <a href="javascript:retrieveKey('me', requestKeysForID)">Retrieve Key!</a>
+									</p>
+									<p><input type="button" id="fbloginbtn" class="btn info" onclick="updateFriendlists(document)" value="Refresh Friendlists"/></p>
+								</div>
+								<div class="span9 offset1" id="selectedfriends"></div>
+								<div class="clearfix"></div>
+								<div class="span9 offset1">
+									<h2>Upload new images</h2>
+								</div>
+								<div id="filechoose" class="span5 offset1">
+									<p>Press this button to select a file to upload..</p>
+									<input type="file" id="file" multiple></input>
+								</div>
+								<div class="span4">
+									<div id="dropzone">
+										.. or drag a picture here to upload it to Picasa WebAlbums.
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 
-      <footer>
-        <p>Design from <a href="http://twitter.github.com/bootstrap">Bootstrap</a></p>
-      </footer>
+				<footer>
+				<p>Design from <a href="http://twitter.github.com/bootstrap">Bootstrap</a></p>
+				</footer>
 
-    </div> <!-- /container -->
+			</div> <!-- /container -->
 
-  </body>
-</html>
+		</body>
+	</html>

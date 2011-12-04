@@ -56,3 +56,11 @@ body {
 	padding: 25px;
 	border: 1px dashed #ccc;
 }
+
+.selectedfriend {
+	float: left;
+	padding: 5px;
+	margin: 5px;
+	font-weight: bold;
+	background: #D8DFEA;
+}

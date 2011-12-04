@@ -1,8 +1,3 @@
-function show_uploadform() {
-	$("#Simple-Chrome-Login").hide();
-	$("#Picasa-Upload").show();
-}
-
 function on_image_sent(response, xhr) {
 	$("#Picasa-Uplaod").prepend("<p>Das Bild wurde erfolgreich hochgeladen!<br/> " + response + "</p>");
 }
@@ -111,7 +106,7 @@ function gAuth() {
 	});
 }
 
-function logout() {
+function gLogout() {
 	var oauth = chrome.extension.getBackgroundPage().oauth;
 	oauth.clearTokens();
 	location.reload(true);

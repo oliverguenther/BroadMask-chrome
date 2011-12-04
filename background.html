@@ -4,26 +4,53 @@
 		<script src="js/chrome_ex_oauth_simple.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/javascript" charset="utf-8">
 			var oauth = ChromeExOAuth.initBackgroundPage({
-			  'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
-			  'authorize_url': 'https://www.google.com/accounts/OAuthAuthorizeToken',
-			  'access_url': 'https://www.google.com/accounts/OAuthGetAccessToken',
-			  'consumer_key': 'anonymous',
-			  'consumer_secret': 'anonymous',
-			  'scope': 'https://picasaweb.google.com/data',
-			  'app_name': 'BroadMask'
+				'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
+				'authorize_url': 'https://www.google.com/accounts/OAuthAuthorizeToken',
+				'access_url': 'https://www.google.com/accounts/OAuthGetAccessToken',
+				'consumer_key': 'anonymous',
+				'consumer_secret': 'anonymous',
+				'scope': 'https://picasaweb.google.com/data',
+				'app_name': 'BroadMask'
 			});
-			
+
+			function getParameterByName(name, url) {
+				name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+				var regexS = "[\\?&#]" + name + "=([^&#]*)";
+				var regex = new RegExp(regexS);
+				var results = regex.exec(url);
+				if(results == null)
+					return "";
+				else
+					return decodeURIComponent(results[1].replace(/\+/g, " "));
+			}
+
+			function onFacebookLogin() {
+				chrome.tabs.getAllInWindow(null, function(tabs) {
+					for (var i = 0; i < tabs.length; i++) {
+						if (tabs[i].url.indexOf("https://www.facebook.com/connect/login_success.html") == 0) {
+							var params = getParameterByName("access_token",tabs[i].url);
+							console.log(params);
+							localStorage.fbtoken = params;
+							chrome.tabs.onUpdated.removeListener(onFacebookLogin);
+							chrome.tabs.remove(tabs[i].id);
+							window.location.reload();
+							return;
+						}
+					}
+				});
+			};
+
 			chrome.browserAction.onClicked.addListener(function(tab) {
-			    chrome.tabs.create({'url': chrome.extension.getURL('init.html')}, function(tab) {
-			    });
+				chrome.tabs.create({'url': chrome.extension.getURL('init.html')}, function(tab) {
+				});
 			});
-			
+
 		</script>
 	</head>	
-<body>
-	<!-- <embed name="broadmask" id="broadmask" width=0 height=0 type="application/x-nacl-srpc" onload="moduleDidLoad()"/>
-	<script type="text/javascript">
-		var nexes = 'x86-32: braodmask/braodmask_x86_32.nexe';
+	<body>
+		<!-- <embed name="broadmask" id="broadmask" width=0 height=0 type="application/x-nacl-srpc" onload="moduleDidLoad()"/>
+		<script type="text/javascript">
+			var nexes = 'x86-32: braodmask/braodmask_x86_32.nexe';
 		document.getElementById('broadmask').nexes = nexes;
 	</script> -->
 </body>
