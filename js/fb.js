@@ -11,6 +11,22 @@ function getFBData(url, callback) {
 	}
 }
 
+function getFriendlistIDs() {
+	var friendlists = localStorage.friendlists;
+	var ids = [];
+	if (typeof friendlists !== "undefined") {
+		$.each(friendlists, function () {
+			ids.push(this.id);
+		});
+	}
+	return ids;
+}
+
+function updateKeys() {
+	var friendlistids = getFriendlistIDs();
+		
+}
+
 function fetchFriendlistMembers(id) {
 	getFBData("https://graph.facebook.com/" + id + "/members", function (members) {
 		if (Array.isArray(members) && members.length > 0) {

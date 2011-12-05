@@ -54,13 +54,6 @@
 					oauth      : true,
 					xfbml      : true 
 				});
-				// Test if user logged into FB
-				FB.getLoginStatus(function(response) {
-					if (response.authResponse) {
-					} else {
-						delete localStorage.fbtoken;
-					}
-				});
 			};
 
 			// Load FB SDK
@@ -138,7 +131,7 @@
 								</div>
 								<div class="span7 offset3">
 									<p>
-									  <a href="javascript:retrieveKey('me', requestKeysForID)">Retrieve Key!</a>
+									<a href="javascript:updateKeys()">Retrieve Keys!</a>
 									</p>
 									<p><input type="button" id="fbloginbtn" class="btn info" onclick="updateFriendlists(document)" value="Refresh Friendlists"/></p>
 								</div>
