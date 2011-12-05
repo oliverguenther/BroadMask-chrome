@@ -1,0 +1,9 @@
+{
+	"extName": {
+		"message": "BroadMask",
+		"description": "This extension's title"
+	},
+	"title": {
+		"message": "Hiding private content in Online Social Networks using Broadcast Encryption"
+	}
+}

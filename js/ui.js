@@ -1,10 +1,15 @@
 function error(msg) {
-	$("#errormsg").append("<p>" + msg + "</p>");
+	$("#errors").append("<p>" + msg + "</p>");
 	$("#errormsg").show();
 }
 
 function debug(msg) {
-	$("#errormsg").append("<p>DEBUG: " + msg + "</p>");
+	$("#errors").append("<p>DEBUG: " + msg + "</p>");
 	$("#errormsg").show();
+}
+
+function hideErrors() {
+	$("#errormsg").hide();
+	$("#errors").empty();
 }
 

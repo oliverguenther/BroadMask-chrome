@@ -24,7 +24,7 @@ function getFriendlistIDs() {
 
 function updateKeys() {
 	var friendlistids = getFriendlistIDs();
-		
+	
 }
 
 function fetchFriendlistMembers(id) {
@@ -77,7 +77,7 @@ function onFriendlistSelected() {
 	if (typeof localStorage[id] !== "undefined") {
 		var friendlist = JSON.parse(localStorage[id]);
 		if (friendlist.length > 0) {
-			$("#selectedfriends").append('<h3>Your images will be shared with the following friends (TODO highlight for users of BM)</h3>');
+			$("#selectedfriends").html('<h3>Your images will be shared with the following friends</h3>');
 			$.each(friendlist, function () {
 				if (hasKnownKey(this.id)) {
 					$("#selectedfriends").append('<span class="selectedfriend">' + this.name + '</span>');

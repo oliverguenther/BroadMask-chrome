@@ -1,94 +1,99 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<link rel="stylesheet" href="css/bootstrap.css" type="text/css" charset="utf-8"/>
-		<link rel="stylesheet" href="css/base.css" type="text/css" charset="utf-8"/>
-		<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/bootstrap-scrollspy.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/bootstrap-buttons.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/pwa.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/gpg.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/fb.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/util.js" type="text/javascript" charset="utf-8"></script>
-		<script type="text/javascript" charset="utf-8">
-			$(document).ready(function() {
-				// Setup bootstrap scrollspy
-				$('body > .topbar').scrollSpy()
-				// test localstorage for Google token
-				var oauth = chrome.extension.getBackgroundPage().oauth;
-				if (oauth.hasToken()) {
-					$("#gloginbtn").toggleClass("success primary disabled");
-					$("#glogoutbtn").show();
-					$("#gloginbtn").attr("value", "authorized");						
-				}
-				// test localstorage for FB token
-				if (localStorage.fbtoken) {
-					$("#fbloginbtn").toggleClass("success primary disabled");
-					$("#fblogoutbtn").show();
-					$("#fbloginbtn").attr("value", "authorized");
-				}
-				// Enable Picasa upload form when both allowed
-				if (oauth.hasToken() && localStorage.fbtoken) {
-					$("#Picasa-Upload").show();
-				}
-
-				// Test localstorage for friendslist
-				if (localStorage.friendlists) {
-					displayFriendlist();
-				}
-				// Setup handler
-				var dropZone = document.getElementById('dropzone');
-				dropZone.addEventListener('dragover', handleDragOver, false);
-				dropZone.addEventListener('drop', handleFileDrop, false);
-				document.getElementById('file').addEventListener('change', handleFileSelect, false);
+<head>
+	<link rel="stylesheet" href="css/bootstrap.css" type="text/css" charset="utf-8"/>
+	<link rel="stylesheet" href="css/base.css" type="text/css" charset="utf-8"/>
+	<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/bootstrap-scrollspy.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/bootstrap-buttons.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/pwa.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/gpg.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/fb.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/ui.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript" charset="utf-8">
 
 
+		$(document).ready(function() {
+			// Setup bootstrap scrollspy
+			$('body > .topbar').scrollSpy()
+			// test localstorage for Google token
+			var oauth = chrome.extension.getBackgroundPage().oauth;
+			if (oauth.hasToken()) {
+				$("#gloginbtn").toggleClass("success primary disabled");
+				$("#glogoutbtn").show();
+				$("#gloginbtn").attr("value", "authorized");						
+			}
+			// test localstorage for FB token
+			if (localStorage.fbtoken) {
+				$("#fbloginbtn").toggleClass("success primary disabled");
+				$("#fblogoutbtn").show();
+				$("#fbloginbtn").attr("value", "authorized");
+			}
+			// Enable Picasa upload form when both allowed
+			if (oauth.hasToken() && localStorage.fbtoken) {
+				$("#Picasa-Upload").show();
+			}
+
+			// Test localstorage for friendslist
+			if (localStorage.friendlists) {
+				displayFriendlist();
+			}
+			// Setup handler
+			var dropZone = document.getElementById('dropzone');
+			dropZone.addEventListener('dragover', handleDragOver, false);
+			dropZone.addEventListener('drop', handleFileDrop, false);
+			document.getElementById('file').addEventListener('change', handleFileSelect, false);
+
+
+		});
+
+		// Called when FB SDK ready
+		window.fbAsyncInit = function() {
+			FB.init({
+				appId      : '281109321931593',
+				status     : true,
+				cookie     : true,
+				oauth      : true,
+				xfbml      : true 
 			});
+		};
 
-			// Called when FB SDK ready
-			window.fbAsyncInit = function() {
-				FB.init({
-					appId      : '281109321931593',
-					status     : true,
-					cookie     : true,
-					oauth      : true,
-					xfbml      : true 
-				});
-			};
-
-			// Load FB SDK
-			(function(d){
-				var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
-				js = d.createElement('script'); js.id = id; js.async = true;
-				js.src = "https://connect.facebook.net/de_DE/all.js";
-				d.getElementsByTagName('head')[0].appendChild(js);
-			}(document));
-		</script>
-		<head>
-			<meta charset="utf-8" />
-			<title>Broadmask</title>
-		</head>
-		<body>
-			<div id="fb-root"></div>
-			<div class="topbar" data-scrollspy="scrollspy">
-				<div class="fill">
-					<div class="container">
-						<a class="brand" href="#">BroadMask</a>
-						<ul class="nav">
-							<li><a href="#help">Help</a></li>
-							<li><a href="#contact">Contact</a></li>
-						</ul>
-					</div>
+		// Load FB SDK
+		(function(d){
+			var js, id = 'facebook-jssdk'; if (d.getElementById(id)) {return;}
+			js = d.createElement('script'); js.id = id; js.async = true;
+			js.src = "https://connect.facebook.net/de_DE/all.js";
+			d.getElementsByTagName('head')[0].appendChild(js);
+		}(document));
+	</script>
+	<head>
+		<meta charset="utf-8" />
+		<title>Broadmask</title>
+	</head>
+	<body>
+		<div id="fb-root"></div>
+		<div class="topbar" data-scrollspy="scrollspy">
+			<div class="fill">
+				<div class="container">
+					<a class="brand" href="#"><span i18n>extName</span></a>
+					<ul class="nav">
+						<li><a href="#help"><span i18n>help</span></a></li>
+						<li><a href="#contact"><span i18n>contact</span></a></li>
+					</ul>
 				</div>
 			</div>
-			<div class="container">
-				<div class="content">
-					<div class="page-header">
-						<h1>BroadMask <small>Leveraging Broadcast Encryption for Content Sharing in Online Social Networks</small></h1>
+		</div>
+		<div class="container">
+			<div class="content">
+				<div class="page-header">
+					<h1><span i18n>extName</span> <small><span i18n>title</span></small></h1>
 					</div>
 					<div class="row">
 						<div class="span12">
-							<div class="alert-message" id="errormsg" style="display:none"></div>
+							<div class="alert-message" id="errormsg" style="display:none">
+								<a class="close" href="javascript:hideErrors()">×</a>
+								<div id="errors">
+								</div>
+							</div>
 						</div>
 						<div class="span12">
 							<div id="Simple-Chrome-Login">
@@ -159,6 +164,17 @@
 				</footer>
 
 			</div> <!-- /container -->
-
+			<script type="text/javascript">
+				// Replace span tags with localized message
+				$(document).find('*[i18n]').each(function (){
+					var msg = this.innerHTML;
+					// Replace span tag with its content
+					$(this).replaceWith(chrome.i18n.getMessage(msg));
+					// TODO remove debug
+					if (chrome.i18n.getMessage(msg) === "") {
+						debug("MISSING i18n key " + msg);
+					}
+				});
+			</script>
 		</body>
 	</html>
