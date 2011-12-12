@@ -5,5 +5,14 @@
 	},
 	"title": {
 		"message": "Hiding private content in Online Social Networks using Broadcast Encryption"
+	},
+	"help": {
+		"message": "Help"
+	},
+	"contact": {
+		"message": "Contact"
+	},
+	"btn_refresh_friendlist": {
+		"message": "Refresh friendlist"
 	}
 }

@@ -1,57 +1,101 @@
 <html>
-	<head>
-		<script src="js/chrome_ex_oauth.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/chrome_ex_oauth_simple.js" type="text/javascript" charset="utf-8"></script>
-		<script type="text/javascript" charset="utf-8">
-			var oauth = ChromeExOAuth.initBackgroundPage({
-				'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
-				'authorize_url': 'https://www.google.com/accounts/OAuthAuthorizeToken',
-				'access_url': 'https://www.google.com/accounts/OAuthGetAccessToken',
-				'consumer_key': 'anonymous',
-				'consumer_secret': 'anonymous',
-				'scope': 'https://picasaweb.google.com/data',
-				'app_name': 'BroadMask'
-			});
+<head>
+	<script src="js/chrome_ex_oauth.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/chrome_ex_oauth_simple.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript" charset="utf-8">
+	// Broadmask Module
+	BroadmaskModule = null;  // Global application object.
+	statusText = 'NO-STATUS';
+	var callbacks;
+	
+	var oauth = ChromeExOAuth.initBackgroundPage({
+		'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
+		'authorize_url': 'https://www.google.com/accounts/OAuthAuthorizeToken',
+		'access_url': 'https://www.google.com/accounts/OAuthGetAccessToken',
+		'consumer_key': 'anonymous',
+		'consumer_secret': 'anonymous',
+		'scope': 'https://picasaweb.google.com/data',
+		'app_name': 'BroadMask'
+	});
 
-			function getParameterByName(name, url) {
-				name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-				var regexS = "[\\?&#]" + name + "=([^&#]*)";
-				var regex = new RegExp(regexS);
-				var results = regex.exec(url);
-				if(results == null)
-					return "";
-				else
-					return decodeURIComponent(results[1].replace(/\+/g, " "));
+	function getParameterByName(name, url) {
+		name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+		var regexS = "[\\?&#]" + name + "=([^&#]*)";
+		var regex = new RegExp(regexS);
+		var results = regex.exec(url);
+		if(results == null)
+		return "";
+		else
+		return decodeURIComponent(results[1].replace(/\+/g, " "));
+	}
+
+	function onFacebookLogin() {
+		chrome.tabs.getAllInWindow(null, function(tabs) {
+			for (var i = 0; i < tabs.length; i++) {
+				if (tabs[i].url.indexOf("https://www.facebook.com/connect/login_success.html") == 0) {
+					var params = getParameterByName("access_token",tabs[i].url);
+					console.log("Found FB api params" + params);
+					localStorage.fbtoken = params;
+					chrome.tabs.onUpdated.removeListener(onFacebookLogin);
+					chrome.tabs.remove(tabs[i].id);
+					chrome.tabs.update(tabId, {selected: true}, function () {
+						window.location.reload();
+					});
+					return;
+				}
 			}
+		});
+	};
 
-			function onFacebookLogin() {
-				chrome.tabs.getAllInWindow(null, function(tabs) {
-					for (var i = 0; i < tabs.length; i++) {
-						if (tabs[i].url.indexOf("https://www.facebook.com/connect/login_success.html") == 0) {
-							var params = getParameterByName("access_token",tabs[i].url);
-							console.log(params);
-							localStorage.fbtoken = params;
-							chrome.tabs.onUpdated.removeListener(onFacebookLogin);
-							chrome.tabs.remove(tabs[i].id);
-							window.location.reload();
-							return;
-						}
-					}
-				});
-			};
+	chrome.browserAction.onClicked.addListener(function(tab) {
+		chrome.tabs.create({'url': chrome.extension.getURL('init.html')}, function(tab) {
+		});
+	});
 
-			chrome.browserAction.onClicked.addListener(function(tab) {
-				chrome.tabs.create({'url': chrome.extension.getURL('init.html')}, function(tab) {
-				});
-			});
+	/* Broadmask Native was loaded successful*/
+	function moduleDidLoad() {
+		BroadmaskModule = document.getElementById('broadmask');
+		statusText = "SUCCESS";
+		console.log("Broadmask has loaded");
+		BroadmaskModule.addEventListener('message', handleMessage, false);
+	}
+	
+	/** Handle an incoming message from Broadmask code */
+	function handleMessage(message_event) {
+	  alert(message_event.data);
+	  console.log(message_event);
+    }
 
-		</script>
-	</head>	
-	<body>
-		<!-- <embed name="broadmask" id="broadmask" width=0 height=0 type="application/x-nacl-srpc" onload="moduleDidLoad()"/>
+	/** Send request to wrap image to BMP */
+	function wrapImage(image, asbase64, callback) {
+		var request = asbase64 ? 'upload:asBase64:' : 'upload:';
+		if (callback && typeof callback === 'function') {
+			msgcallback[request] = callback;
+		}
+		if (BroadmaskModule) {
+			BroadmaskModule.postMessage(request + image);
+		} else {
+			console.log("Error: Can't wrap image as module was not loaded! Status is " + statusText);
+		}
+	}
+
+	</script>
+</head>	
+<body>
+	<div id="listener">
 		<script type="text/javascript">
-			var nexes = 'x86-32: braodmask/braodmask_x86_32.nexe';
-		document.getElementById('broadmask').nexes = nexes;
-	</script> -->
+		var listener = document.getElementById('listener');
+		listener.addEventListener('load', moduleDidLoad, true);
+		</script>
+
+		<embed name="broadmask"
+		id="broadmask"
+		width=0 height=0
+		src="broadmask/broadmask.nmf"
+		type="application/x-nacl" />
+	</div>
+	<h2>Status</h2>
+	<div id="status_field">NO-STATUS</div>
+</body>
 </body>
 </html>

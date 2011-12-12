@@ -14,6 +14,7 @@ function construct_multipart(title, description, image, mimetype) {
 	return multipart.join("");
 }
 
+// Multipart DOES NOT WORK
 function image_to_albumid(file,albumid) {
 	var oauth = chrome.extension.getBackgroundPage().oauth;
 	var method = 'POST';
@@ -71,7 +72,15 @@ function handleFiles(files) {
 			continue;
 		}
 		
-		add_single_image_to_albumid(f, '5676821079988873841');
+		//add_single_image_to_albumid(f, '5676821079988873841');
+		var reader = new FileReader();
+		reader.onload = (function(theFile) {
+			return function(e) {
+				var binary = e.target.result;
+				chrome.extension.getBackgroundPage().wrapImage(binary, false);
+			};
+		})(file);
+		reader.readAsBinaryString(f);
 	}
 }
 

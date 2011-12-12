@@ -4,6 +4,15 @@
 	},
 	"title": {
 		"message": "Schutz privater Inhalte in Sozialen Netzwerken durch Broadcast Encryption"
+	},
+	"help": {
+		"message": "Hilfe"
+	},
+	"contact": {
+		"message": "Kontakt"
+	},
+	"btn_refresh_friendlist": {
+		"message": "Freundesliste aktualisieren"
 	}
 }
 
