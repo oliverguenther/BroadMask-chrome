@@ -8,15 +8,18 @@
 	<script src="js/broadmask/pwa.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/broadmask/gpg.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/broadmask/fb.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/broadmask/ui.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/ui/ui.js" type="text/javascript" charset="utf-8"></script>
 	<script type="text/javascript" charset="utf-8">
 
+			// Globals
+			var bg = chrome.extension.getBackgroundPage();
+			var oauth = bg.oauth;
+			var broadmask = bg.broadmask;
 
 		$(document).ready(function() {
 			// Setup bootstrap scrollspy
 			$('body > .topbar').scrollSpy()
 			// test localstorage for Google token
-			var oauth = chrome.extension.getBackgroundPage().oauth;
 			if (oauth.hasToken()) {
 				$("#gloginbtn").toggleClass("success primary disabled");
 				$("#glogoutbtn").show();

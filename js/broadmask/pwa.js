@@ -77,7 +77,7 @@ function handleFiles(files) {
 		reader.onload = (function(theFile) {
 			return function(e) {
 				var imageurl = e.target.result;
-				chrome.extension.getBackgroundPage().wrapImage(imageurl.substring(5), false); // remove "data:"
+				broadmask.nacl.wrapImage(imageurl.substring(5), false); // remove "data:"
 			};
 		})(file);
 		reader.readAsDataURL(f);

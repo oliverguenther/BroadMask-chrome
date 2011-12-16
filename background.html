@@ -5,14 +5,8 @@
 		<script src="js/util/chrome_ex_oauth_simple.js" type="text/javascript" charset="utf-8"></script>
 		<!-- Broadmask Wrapper module -->
 		<script src="js/broadmask/broadmask.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/broadmask/broadmask.nacl.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/javascript" charset="utf-8">
-
-			// Broadmask Module
-			broadmask = {};
-			BroadmaskModule = null;  // Global application object.
-			statusText = 'NO-STATUS';
-			var callbacks;
-			var SRPC_MAXLEN = 65000; // max length is 65228
 
 			var oauth = ChromeExOAuth.initBackgroundPage({
 				'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
@@ -58,97 +52,17 @@
 				});
 			});
 
-			/* Broadmask Native was loaded successful*/
-			function moduleDidLoad() {
-				BroadmaskModule = document.getElementById('broadmask');
-				statusText = "SUCCESS";
-				console.log("Broadmask has loaded");
-				BroadmaskModule.addEventListener('message', handleMessage, false);
-			}
 
-			function parsemethod(data) {
-				if (!data || typeof data != 'string') {
-					return null;
-				}
-				var call = new Object();
-				var offset = data.indexOf(" ");
-				if (offset == -1) {
-					return null; // couldn't parse method name
-				}
-				call.methodName = data.substr(0, offset);
-				// get data offset
-				var doffset = data.indexOf("data:") || data.length -1;
-				var params = data.substr(offset, doffset);
-				// parse parameters
-				var regex = /(\w+):(\w+)/g;
-				var matches = regex.exec(params);
-				while (matches) {
-					var param = matches[0];
-					var value = matches[1];
-					call[param] = value;
-				}
 
-				return call;
 
-			}
-
-			/** Handle an incoming message from Broadmask code */
-			function handleMessage(message_event) {
-				var message = parsemethod(message_event.data);
-				console.log(message_event.data.length);
-			}
-
-			/** Send request to wrap image to BMP */
-			function wrapImage(image, callback) {
-				var uid = Math.round(Math.random() * 1024);				
-				if (callback && typeof callback === 'function') {
-					msgcallback[uid] = callback;
-				}
-				if (BroadmaskModule) {
-					// split messages if necessary (SRPC BUG)
-					if (image.length > SRPC_MAXLEN) {
-						console.log("Image size is " + image.length + " , needs to be split");
-						var packetid = 0;
-						while ((image.length % SRPC_MAXLEN) != 0)  {
-							var packet = image.substr(0, SRPC_MAXLEN);	
-							image = image.substring(SRPC_MAXLEN);
-							BroadmaskModule.postMessage("handlePacket uid:" + uid + "		part:" + packetid + "		data:" + packet);
-							packetid++;
-						}
-						if (image.length > 0) {
-							// Send last packet, marked by negative id
-							console.log("Sending last packet after " + packet + "		packets");
-							packet = '-1'; 
-							BroadmaskModule.postMessage("handlePacket uid:" + uid + "		part:" + packetid + "		data:" + image);
-						}
-					} else {
-						// Image is smaller than SRPC maxlen, send as one packet
-						BroadmaskModule.postMessage("wrapImage uid: " + uid + "		data:" + image);
-					}
-					// Tell Broadmask to wrap the image
-					BroadmaskModule.postMessage("wrapImage uid:" + uid);
-				} else {
-					console.log("Error: Can't wrap image as module was not loaded! Status is " + statusText);
-				}
-			}
 
 		</script>
 	</head>	
 	<body>
-		<div id="listener">
-			<script type="text/javascript">
-				var listener = document.getElementById('listener');
-				listener.addEventListener('load', moduleDidLoad, true);
-			</script>
-
-			<embed name="broadmask"
-			id="broadmask"
-			width=0 height=0
-			src="broadmask/broadmask.nmf"
-			type="application/x-nacl" />
-		</div>
-		<h2>Status</h2>
-		<div id="status_field">NO-STATUS</div>
+    <div id="broadmask_listener"></div>
+    <script type="text/javascript">
+      var broadmask = new broadmask();
+    </script>
 	</body>
 </body>
 </html>
