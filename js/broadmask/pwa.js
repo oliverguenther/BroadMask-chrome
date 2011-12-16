@@ -4,13 +4,13 @@ function on_image_sent(response, xhr) {
 
 function construct_multipart(title, description, image, mimetype) {
 	var multipart = ['Media multipart posting', "	\n", '--END_OF_PART', "\n",
-	'Content-Type: application/atom+xml',"\n","\n",
-	"<entry xmlns='http://www.w3.org/2005/Atom'>", '<title>', title, '</title>',
-	'<summary>', description, '</summary>',
-	'<category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/photos/2007#photo" />',
-	'</entry>', "\n", '--END_OF_PART', "\n",
-	'Content-Type:', mimetype, "\n\n",
-	image, "\n", '--END_OF_PART--'];
+		'Content-Type: application/atom+xml',"\n","\n",
+		"<entry xmlns='http://www.w3.org/2005/Atom'>", '<title>', title, '</title>',
+		'<summary>', description, '</summary>',
+		'<category scheme="http://schemas.google.com/g/2005#kind" term="http://schemas.google.com/photos/2007#photo" />',
+		'</entry>', "\n", '--END_OF_PART', "\n",
+		'Content-Type:', mimetype, "\n\n",
+		image, "\n", '--END_OF_PART--'];
 	return multipart.join("");
 }
 
@@ -37,7 +37,7 @@ function image_to_albumid(file,albumid) {
 				url,
 				on_image_sent,
 				params
-				);
+			);
 		};
 	})(file);
 	reader.readAsText(file);
@@ -71,16 +71,16 @@ function handleFiles(files) {
 		if (!f.type.match('image.*')) {
 			continue;
 		}
-		
+
 		//add_single_image_to_albumid(f, '5676821079988873841');
 		var reader = new FileReader();
 		reader.onload = (function(theFile) {
 			return function(e) {
-				var binary = e.target.result;
-				chrome.extension.getBackgroundPage().wrapImage(binary, false);
+				var imageurl = e.target.result;
+				chrome.extension.getBackgroundPage().wrapImage(imageurl.substring(5), false); // remove "data:"
 			};
 		})(file);
-		reader.readAsBinaryString(f);
+		reader.readAsDataURL(f);
 	}
 }
 
