@@ -2,6 +2,14 @@ function Broadmask_nacl() {
 
 	this.SRPC_MAXLEN = 65000; // max length is 65228
 
+	// Setup API handlers
+	this.imgHost = new Broadmask_picasa();
+	this.osn = new Broadmask_facebook();
+
+	// Setup crypto implementations
+	this.shared = new Broadmask_aes();
+	this.broadcast = new Broadmask_be();
+
 	// Handler for native client module
 	this.module = null;
 

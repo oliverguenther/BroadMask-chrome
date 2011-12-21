@@ -1,11 +1,24 @@
 <html>
 	<head>
-		<!-- Google oAuth	 -->
+		<!-- utils -->
 		<script src="js/util/chrome_ex_oauth.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/util/chrome_ex_oauth_simple.js" type="text/javascript" charset="utf-8"></script>
-		<!-- Broadmask Wrapper module -->
-		<script src="js/broadmask/broadmask.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/permafrost/permafrost.js" type="text/javascript" charset="utf-8"></script>
+		<!-- Broadmask native client implementation -->
 		<script src="js/broadmask/broadmask.nacl.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/broadmask/nacl/crypto/broadmask.nacl.aes.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/broadmask/nacl/crypto/broadmask.nacl.be.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/broadmask/nacl/crypto/broadmask.nacl.openpgp.js" type="text/javascript" charset="utf-8"></script>
+		<!-- Broadmask JS implementation -->
+		<script src="js/broadmask/broadmask.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/broadmask/imageHosts/broadmask.imagehost.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/broadmask/imageHosts/broadmask.picasa.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/broadmask/osn/broadmask.osn.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/broadmask/osn/broadmask.facebook.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/broadmask/crypto/broadmask.aes.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/broadmask/crypto/broadmask.be.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/broadmask/crypto/broadmask.openpgp.js" type="text/javascript" charset="utf-8"></script>
+
 		<script type="text/javascript" charset="utf-8">
 
 			var oauth = ChromeExOAuth.initBackgroundPage({
