@@ -5,10 +5,12 @@ function Broadmask_nacl() {
 	// Handler for native client module
 	this.module = null;
 
+	// Handle callbacks for messages
+	this.cb = {};
+
 	// Module status
 	this.running = false;
 
-	// privileged method
 	this.parseMethod = function parseMethod(data) {
 		if (!data || typeof data !== 'string') {
 			return null;

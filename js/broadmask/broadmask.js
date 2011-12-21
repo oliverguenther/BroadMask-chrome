@@ -4,4 +4,4 @@ function broadmask() {
 	this.nacl = new Broadmask_nacl();
 	this.nacl.run();
 
-};
+}

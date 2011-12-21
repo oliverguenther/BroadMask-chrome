@@ -102,7 +102,7 @@ function displayFriendlist() {
 
 function fbAuth() {
 	chrome.tabs.onUpdated.addListener(chrome.extension.getBackgroundPage().onFacebookLogin);
-	chrome.tabs.create({'url': "https://www.facebook.com/dialog/oauth?client_id=281109321931593&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token"},
+	chrome.tabs.create({'url': "https://www.facebook.com/dialog/oauth?client_id=281109321931593&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token&scope=publish_stream,create_note,read_friendlists"},
 		null);
 }
 
