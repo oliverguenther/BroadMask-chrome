@@ -8,8 +8,4 @@ function broadmask() {
 	this.shared = new Broadmask_aes();
 	this.broadcast = new Broadmask_be();
 	
-	// Setup NACL module
-	this.nacl = new Broadmask_nacl();
-	this.nacl.run();
-
 }

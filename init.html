@@ -3,18 +3,16 @@
 	<link rel="stylesheet" href="css/bootstrap.css" type="text/css" charset="utf-8"/>
 	<link rel="stylesheet" href="css/base.css" type="text/css" charset="utf-8"/>
 	<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/broadmask/osn/broadmask.facebook.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/ui/bootstrap-scrollspy.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/ui/bootstrap-buttons.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/broadmask/api/broadmask.picasa.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/broadmask/crypto/broadmask.openpgp.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/broadmask/api/broadmask.facebook.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/ui/ui.js" type="text/javascript" charset="utf-8"></script>
 	<script type="text/javascript" charset="utf-8">
 
-			// Globals
-			var bg = chrome.extension.getBackgroundPage();
-			var oauth = bg.oauth;
-			var broadmask = bg.broadmask;
+		// Globals
+		var bg = chrome.extension.getBackgroundPage();
+		var oauth = bg.oauth;
+		var broadmask = bg.broadmask;
 
 		$(document).ready(function() {
 			// Setup bootstrap scrollspy
