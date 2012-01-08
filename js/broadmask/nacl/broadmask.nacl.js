@@ -101,7 +101,8 @@ Broadmask_nacl.prototype.sendMessage = function (message, callback) {
 		var uid = Math.round(Math.random() * 1024);
 		message.uid = uid;
 		this.cb[uid] = callback;
-		var data = btoa(message.data);
+		// var data = btoa(message.data);
+		var data = message.data;
 		// split messages if necessary (SRPC BUG)
 		if (data.length > this.SRPC_MAXLEN) {
 			console.log("data size is " + data.length + " , needs to be split");

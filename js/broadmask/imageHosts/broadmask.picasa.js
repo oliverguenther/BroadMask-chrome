@@ -40,7 +40,7 @@ function Broadmask_Picasa(oauth) {
 				);
 			};
 		}(file));
-		reader.readAsbinaryString(file);
+		reader.readAsDataURL(file);
 	}
 
 
@@ -96,11 +96,23 @@ Broadmask_Picasa.prototype.handleFiles = function (files) {
 				broadmask.wrapImage(image, callback);
 			};
 		})(f);
-		reader.readAsBinaryString(f);
+		reader.readAsDataURL(f);
 	}
 }
 
 Broadmask_Picasa.prototype.uploadImage = function (message, file) {
+	// file is the wrapped BMP as string, 
+	// we need to convert it to a blob - which is just a bit ugly
+	var bb = new window.WebKitBlobBuilder();
+	var byteArray = new Uint8Array(file.length);
+	for (var i = 0, len = file.length; i < len; i++) {
+		byteArray[i] = file.charCodeAt(i) & 0xff;
+		console.log(byteArray[i]);
+	}
+
+	var builder = new (window.BlobBuilder || window.WebKitBlobBuilder)();
+	builder.append(byteArray.buffer);
+	var bmp = builder.getBlob("image/bmp");
 	var method = 'POST';
 	var url = 'https://picasaweb.google.com/data/feed/api/user/default/albumid/default';
 	var xhr = new XMLHttpRequest();
@@ -113,7 +125,7 @@ Broadmask_Picasa.prototype.uploadImage = function (message, file) {
 			// imageUploaded(data, xhr);
 		}
 	};
-	xhr.send(file);
+	xhr.send(bmp);
 };
 
 Broadmask_Picasa.prototype.performAuth = function () {
