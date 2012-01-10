@@ -3,7 +3,7 @@ function Broadmask_nacl() {
 	this.SRPC_MAXLEN = 65000; // max length is 65228
 
 	// Setup API handlers
-	this.imgHost = new Broadmask_Picasa();
+	this.imgHost = new Broadmask_Picasa(chrome.extension.getBackgroundPage().oauth);
 	// this.osn = new Broadmask_facebook();
 
 	// Setup crypto implementations

@@ -19,6 +19,10 @@ function handleDragOver(evt) {
 	evt.preventDefault();
 }
 
+function imgAuth() {
+	chrome.extension.getBackgroundPage().broadmask.imgHost.performAuth();
+}
+
 function error(msg) {
 	$("#errors").append("<p>" + msg + "</p>");
 	$("#errormsg").show();
