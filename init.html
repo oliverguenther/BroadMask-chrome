@@ -4,6 +4,7 @@
 	<link rel="stylesheet" href="css/base.css" type="text/css" charset="utf-8"/>
 	<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/broadmask/osn/broadmask.facebook.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/broadmask/imageHosts/broadmask.uploader.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/ui/bootstrap-scrollspy.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/ui/bootstrap-buttons.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/ui/ui.js" type="text/javascript" charset="utf-8"></script>
@@ -39,10 +40,7 @@
 				displayFriendlist();
 			}
 			// Setup handler
-			var dropZone = document.getElementById('dropzone');
-			dropZone.addEventListener('dragover', handleDragOver, false);
-			dropZone.addEventListener('drop', handleFileDrop, false);
-			document.getElementById('file').addEventListener('change', handleFileSelect, false);
+			var picasaUploader = new Broadmask_Uploader(document, "picasa", broadmask.imgHost);
 
 
 		});
@@ -143,22 +141,14 @@
 							</div>
 							<div class="span9 offset1" id="selectedfriends"></div>
 							<div class="clearfix"></div>
-							<div class="span9 offset1">
-								<h2>Upload new images</h2>
-							</div>
-							<div id="filechoose" class="span5 offset1">
-								<p>Press this button to select a file to upload..</p>
-								<input type="file" id="file" multiple></input>
-							</div>
-							<div class="span4">
-								<div id="dropzone">
-									.. or drag a picture here to upload it to Picasa WebAlbums.
-								</div>
+							<div class="span10">
+							<div id="picasa">
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
+		</div>
 
 			<footer>
 			<p>Design from <a href="http://twitter.github.com/bootstrap">Bootstrap</a></p>
@@ -187,3 +177,4 @@
 		</script>
 	</body>
 </html>
+

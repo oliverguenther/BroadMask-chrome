@@ -4,35 +4,13 @@ function Broadmask_Picasa(oauth) {
 }
 
 
-Broadmask_Picasa.prototype.handleFiles = function (files) {
-	// Loop through the FileList and render image files as thumbnails.
-	for (var i = 0, f; f = files[i]; i++) {
-
-		// Only process image files.
-		if (!f.type.match('image.*')) {
-			continue;
-		}
-
-		var reader = new FileReader();
-		// bind the callback to this context
-		var callback = this.uploadImage.bind(this);
-		reader.onload = (function(theFile) {
-			return function(e) {
-				var image = e.target.result;
-				broadmask.wrapImage(image, callback);
-			};
-		})(f);
-		reader.readAsDataURL(f);
-	}
-}
-
 /*
- * Uploads an image to Picasa Webalbums. Assumes a user has been logged in through oauth
- * @param message the response from broadmask
- * @param file a BMP as string
- *
- */
-Broadmask_Picasa.prototype.uploadImage = function (message, file) {
+* Uploads an image to Picasa Webalbums. Assumes a user has been logged in through oauth
+* @param message the response from broadmask
+* @param file a BMP as string
+*
+*/
+Broadmask_Picasa.prototype.uploadImage = function (file, progress, callback) {
 	// file is the wrapped BMP as string, 
 	// we need to convert it to a blob - which is just a bit ugly
 	var bb = new window.WebKitBlobBuilder();
@@ -52,10 +30,22 @@ Broadmask_Picasa.prototype.uploadImage = function (message, file) {
 	xhr.setRequestHeader("GData-Version", '3.0');
 	xhr.setRequestHeader("Content-Type", "image/bmp");
 	xhr.setRequestHeader("Authorization", this.oauth.getAuthorizationHeader(url, method, ''));
+	// set progress handler
+	xhr.upload.onprogress = function(e) {
+		if (e.lengthComputable && progress !== null ) {
+			progress.value = (e.loaded / e.total) * 100;
+		}
+	};
+	
 	var that = this;
 	xhr.onreadystatechange = function (data) {
 		if (xhr.readyState === 4) {
-			that.handleResponse(xhr);
+			var url = xhr.getResponseHeader("Content-Location");
+			if (xhr.status === 201 && url != null) {
+				callback(xhr.status, url);
+			} else {
+				callback(xhr.status);
+			}
 		}
 	};
 	xhr.send(bmp);

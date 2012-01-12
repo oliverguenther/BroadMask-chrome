@@ -43,16 +43,40 @@ body {
 	border: 0;
 }
 
+/** uploaders */
+
 #Picasa-Upload {
 	display: none;
 }
 
-#filechoose {
+progress {
+	margin-top: 5px;
+	width: 75px;
+}
+
+.thumb {
+	width: 75px;
+	border: 1px solid #000;
+	margin: 10px 5px 0 0;
+}
+
+.uploadprogress {
+	float: left;
+	margin-right: 5px;
+}
+
+.filepicker {
+	text-align: center;
+}
+
+.filechoose {
 	padding-top: 20px;
 }
 
-#dropzone {
-	color: #ccc;
+.dropzone {
+	background: whiteSmoke;
+	text-align: center;
+	color: #222;
 	padding: 25px;
 	border: 1px dashed #ccc;
 }
