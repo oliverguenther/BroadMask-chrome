@@ -8,6 +8,9 @@ body {
 .container > footer p {
 	text-align: center; /* center align it with the container */
 }
+.container {
+	width: 820px; /* downsize our container to make the content feel a bit tighter and more cohesive. NOTE: this removes two full columns from the grid, meaning you only go to 14 columns and not 16. */
+}
 
 /* The white background content wrapper */
 .container > .content {
@@ -38,4 +41,54 @@ body {
 
 .topbar .btn {
 	border: 0;
+}
+
+/** uploaders */
+
+#Picasa-Upload {
+	display: none;
+}
+
+progress {
+	margin-top: 5px;
+	width: 75px;
+}
+
+.thumb {
+	width: 75px;
+	border: 1px solid #000;
+}
+
+.statusicon {
+	width: 32px;
+}
+
+.uploadprogress {
+	text-align: center;
+	float: left;
+	margin-right: 5px;
+}
+
+.filepicker {
+	text-align: center;
+}
+
+.filechoose {
+	padding-top: 20px;
+}
+
+.dropzone {
+	background: whiteSmoke;
+	text-align: center;
+	color: #222;
+	padding: 25px;
+	border: 1px dashed #ccc;
+}
+
+.selectedfriend {
+	float: left;
+	padding: 5px;
+	margin: 5px;
+	font-weight: bold;
+	background: #D8DFEA;
 }

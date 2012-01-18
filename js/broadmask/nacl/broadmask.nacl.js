@@ -82,7 +82,7 @@ Broadmask_nacl.prototype.handleMessage = function (message_event) {
 	} else {
 		if (typeof this.packets[message.uid] !== null) {
 			console.log("calling callback with packets");
-			data = atob(this.packets[message.uid].join(""));
+			data = this.packets[message.uid].join("");
 			callback(message, data);
 		} else {
 			console.log("Calling callback without anything");
@@ -136,6 +136,15 @@ Broadmask_nacl.prototype.wrapImage = function (image, callback) {
 	var message = {
 		name: "wrapImage",
 		data: image
+	};
+	this.sendMessage(message, callback);
+};
+
+/** Send request to unwrap image to BMP */
+Broadmask_nacl.prototype.unwrapImage = function (image, callback) {
+	var message = {
+		name: "unwrapImage",
+		data: btoa(image)
 	};
 	this.sendMessage(message, callback);
 };

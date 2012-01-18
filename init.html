@@ -3,7 +3,8 @@
 	<link rel="stylesheet" href="css/bootstrap.css" type="text/css" charset="utf-8"/>
 	<link rel="stylesheet" href="css/base.css" type="text/css" charset="utf-8"/>
 	<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/broadmask/osn/broadmask.facebook.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/broadmask/osn/broadmask.fb.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/broadmask/osn/broadmask.fb.api.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/broadmask/imageHosts/broadmask.uploader.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/ui/bootstrap-scrollspy.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/ui/bootstrap-buttons.js" type="text/javascript" charset="utf-8"></script>
@@ -35,14 +36,44 @@
 				$("#Picasa-Upload").show();
 			}
 
-			// Test localstorage for friendslist
-			if (localStorage.friendlists) {
-				displayFriendlist();
+			var addIMG = function (blob) {
+
 			}
-			// Setup handler
-			var picasaUploader = new Broadmask_Uploader(document, "picasa", broadmask.imgHost);
 
+			// Test localstorage for friendslist
+			var osn = new Broadmask_facebook(document, "facebook");
+			var uploader = new Broadmask_Uploader(document, "picasa", broadmask.imgHost, osn);
 
+			// Test find
+			var objs = findBMPosts(function (posts) {
+				// For each actor
+				$.each(posts, function (key,val) {
+					// For each image
+					$.each(val, function () {
+						broadmask.imgHost.fetchImage(this, function (entry, blob) {
+							console.log(entry);
+							if (entry.type !== "image/bmp") {
+								addIMG(blob);
+							} else if (entry.type === "image/bmp") {
+								// Unwrap the BMP before displaying it
+								var reader = new FileReader();
+								// Only process image files.
+								reader.onload = (function (theFile) {
+									return function (e) {
+										broadmask.unwrapImage(e.target.result, function (message, dataURL) {
+											// TODO fix last element
+											var img = document.createElement('img');
+											img.src = dataURL.slice(0,-1);
+											document.body.appendChild(img);
+										});
+									};
+								})(blob);
+								reader.readAsBinaryString(blob);
+							}
+						});
+					});
+				});
+			});
 		});
 
 		// Called when FB SDK ready
@@ -110,45 +141,15 @@
 							<p><input type="button" id="fbloginbtn" class="btn primary" onclick="fbAuth()" value="Login">
 							<input style="display:hidden;" type="button" id="fblogoutbtn" class="btn small danger" onclick="return fbLogout()" value="Revoke"></p>
 						</div>
-						<div id="row">
-							<hr/>
-						</div>
-						<div id="Picasa-Upload" class="row">
-							<div class="span10">
-								<div class="alert-message block-message success">
-									<p>
-									<strong>You are now logged in</strong><br/>
-									You have successfully configured BroadMask and are now ready to use the Plugin!
-									<ul>
-										<li>Select your friendlist from the picker to define the group you're sharing with</li>
-										<li>Select one or multiple images using the button below, or drag&amp;drop some images on the designated area</li>
-										<li>The files will be encrypted and immediately uploaded to your picasa account</li>
-										<li>From there on, the chosen friends will be notified of the pictures</li>
-									</ul>
-									</p>
-								</div>
+						<div class="row">
+							<div id="picasa" class="span12">
 							</div>
-							<div class="span6" id="friends">
-								<p>
-								You're friendlists have not yet been fetched	
-								</p>
-							</div>
-							<div class="span7 offset3">
-								<p>
-								<a href="javascript:updateKeys()">Retrieve Keys!</a>
-								</p>
-								<p><input type="button" id="fbloginbtn" class="btn info" onclick="updateFriendlists(document)" i18n value="btn_refresh_friendlist"/></p>
-							</div>
-							<div class="span9 offset1" id="selectedfriends"></div>
-							<div class="clearfix"></div>
-							<div class="span10">
-							<div id="picasa">
+							<div id="facebook" class="span12">
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
 
 			<footer>
 			<p>Design from <a href="http://twitter.github.com/bootstrap">Bootstrap</a></p>

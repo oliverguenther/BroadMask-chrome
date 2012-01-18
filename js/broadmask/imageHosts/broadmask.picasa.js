@@ -11,6 +11,7 @@ function Broadmask_Picasa(oauth) {
 *
 */
 Broadmask_Picasa.prototype.uploadImage = function (file, progress, callback) {
+	"use strict";
 	// file is the wrapped BMP as string, 
 	// we need to convert it to a blob - which is just a bit ugly
 	var bb = new window.WebKitBlobBuilder();
@@ -52,6 +53,44 @@ Broadmask_Picasa.prototype.uploadImage = function (file, progress, callback) {
 };
 
 
+/** 
+ * Retrieve an image from Picasa.
+ * @param url The url to an picasa entry
+ * @callback Called with entry object (type/src) and the downloaded File as a Blob
+ */
+Broadmask_Picasa.prototype.fetchImage = function (url, callback) {
+	"use strict";
+	var params = "?alt=json&imgmax=d";
+	var xhr = new XMLHttpRequest();
+	xhr.open("GET", url + params, true);
+	xhr.onreadystatechange = function (data) {
+		if (xhr.readyState === 4) {
+			var answerset = JSON.parse(xhr.response);
+			if (typeof answerset === "object" && answerset.hasOwnProperty("entry")) {
+				// Retrive entry data url
+				var content = answerset.entry.content;
+				var fetch = new XMLHttpRequest();
+				fetch.open('GET', content.src, true);
+				fetch.responseType = 'arraybuffer';
+
+				fetch.onload = function(e) {
+					if (this.status == 200) {
+						var bb = new window.WebKitBlobBuilder();
+						bb.append(this.response);
+						var blob = bb.getBlob(content.type);
+						callback(content, blob);
+					}
+				}
+				fetch.send();
+			}
+		}
+	};
+
+	xhr.send();
+				
+};
+
+
 /*
  * Handles a response from Picasa. Extracts the uploaded image on success
  * and reports errors otherwise
@@ -82,7 +121,7 @@ Broadmask_Picasa.prototype.performAuth = function () {
 		// Auth successful / Token in storage
 		show_uploadform();
 	});
-}
+};
 
 Broadmask_Picasa.prototype.revokeAuth = function () {
 	this.oauth.clearTokens();

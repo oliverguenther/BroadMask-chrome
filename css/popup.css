@@ -1,0 +1,61 @@
+html {
+	  overflow-y: hidden;
+	  overflow-x: hidden;
+	  background: #eee;
+}
+
+nav {
+	background: #555;
+	border-right: #aaa;
+	border-bottom-left-radius: 5px;
+	border-top-left-radius: 5px;
+	-webkit-box-shadow: 0 -1px 0 rbg(0, 0, 0, 0.75), inset -1px 1px 1px rbg(0,0,0,0.8);
+	width:  32px;
+	position: absolute;
+	bottom: 0;
+	left: 0;
+}
+
+body {
+	min-width:  300px;
+	min-height: 200px;
+}
+#Picasa-Upload {
+	display: none;
+}
+
+progress {
+	margin-top: 5px;
+	width: 75px;
+}
+
+.thumb {
+	width: 75px;
+	border: 1px solid #000;
+}
+
+.statusicon {
+	width: 32px;
+}
+
+.uploadprogress {
+	text-align: center;
+	float: left;
+	margin-right: 5px;
+}
+
+.filepicker {
+	text-align: center;
+}
+
+.filechoose {
+	padding-top: 20px;
+}
+
+.dropzone {
+	background: whiteSmoke;
+	text-align: center;
+	color: #222;
+	padding: 25px;
+	border: 1px dashed #ccc;
+}

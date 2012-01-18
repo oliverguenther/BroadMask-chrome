@@ -1,6 +1,7 @@
-function Broadmask_Uploader(d, id, host) {
+function Broadmask_Uploader(d, id, host, sharecb) {
 	"use strict";
 	this.host = host;
+	this.share = sharecb;
 	this.broadmask = chrome.extension.getBackgroundPage().broadmask;
 	this.d = d;
 	this.root = d.getElementById(id);
@@ -27,7 +28,6 @@ function Broadmask_Uploader(d, id, host) {
 	filewrapper.className = "filepicker";
 	filepicker.type = "file";
 	filepicker.multiple = "true";
-	filepicker.value = "choose a file"; //chrome.i18n.getMessage("filechoose");
 	dropbox.id = "dropzone-" + id;
 	dropbox.innerText = "drop files here!"; // chrome.i18n.getMessage("dropzone") + this.host.name;
 	dropbox.className = "dropzone";
@@ -45,10 +45,13 @@ Broadmask_Uploader.prototype.newUpload = function (filename, dataURL) {
 	"use strict";
 	var progress = this.d.createElement('progress'),
 		wrapper = this.d.createElement('div'),
+		statusicon = this.d.createElement('img'),
 		thumbdiv = this.d.createElement('div'),
 		thumb = this.d.createElement('img'),
 		that = this;
+	statusicon.className = "statusicon";
 	wrapper.className = "uploadprogress";
+	wrapper.id = Math.round(Math.random() * 100);
 	thumb.className = "thumb";
 	thumb.src = dataURL;
 	thumb.title = filename;
@@ -60,14 +63,17 @@ Broadmask_Uploader.prototype.newUpload = function (filename, dataURL) {
 	this.root.appendChild(wrapper);
 	this.broadmask.wrapImage(dataURL, function (message, file) {
 		// returned from bmp wrapping
-		that.host.uploadImage(file, progress, function (status, url) {
+		that.host.uploadImage(atob(file), progress, function (status, url) {
 			if (url !== undefined) {
-				progress.value = 100;
-				console.log("success!");
-				window.setTimeout(function () {
-					that.d.removeChild(wrapper);
-				}, 1000);
+				statusicon.src = chrome.extension.getURL("img/ok.png");
+				thumb.setAttribute("rel", url);
+				// enable sharing option for all uploaded files
+				that.share.enableSharing('thumb');
+			} else {
+				statusicon.src = chrome.extension.getURL("img/warning.png");
+				// TODO allow retry with dataURL (popover)
 			}
+			wrapper.replaceChild(statusicon, progress);
 		});
 	});
 
@@ -85,6 +91,9 @@ Broadmask_Uploader.prototype.handleFiles = function (files) {
 		len = files.length,
 		reader,
 		initRead;
+
+	// remove old uploads first
+	$(this.d).remove('.uploadprogress');
 
 	initRead = function (theFile) {
 		return function (e) {

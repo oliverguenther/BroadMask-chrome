@@ -12,7 +12,6 @@
 		<!-- Broadmask JS implementation -->
 		<script src="js/broadmask/broadmask.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/broadmask/imageHosts/broadmask.picasa.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/broadmask/osn/broadmask.facebook.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/broadmask/crypto/broadmask.aes.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/broadmask/crypto/broadmask.be.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/broadmask/crypto/broadmask.openpgp.js" type="text/javascript" charset="utf-8"></script>
@@ -51,9 +50,6 @@
 							localStorage.fbtoken = params;
 							chrome.tabs.onUpdated.removeListener(onFacebookLogin);
 							chrome.tabs.remove(tabs[i].id);
-							chrome.tabs.update(tabId, {selected: true}, function () {
-								window.location.reload();
-							});
 							return;
 						}
 					}
