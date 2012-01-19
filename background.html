@@ -30,6 +30,29 @@
 
 			var broadmask = new Broadmask_nacl();
 
+			/** caches images for popup */
+			var unread = {};
+			var badgecount = 0;
+
+			function setRead() {
+				unread = {};
+				badgecount = 0;
+				chrome.browserAction.setBadgeText({text: ""});
+			}
+
+			function newUnread(key, val) {
+				if (!key || !val) {
+					return;
+				}
+				if (!unread.hasOwnProperty(key)) {
+					badgecount++;
+				}
+				unread[key] = val;
+				chrome.browserAction.setBadgeText({text: badgecount.toString()});
+				chrome.browserAction.setBadgeBackgroundColor({color: [118, 248, 123, 255]});
+			}
+
+
 			function getParameterByName(name, url) {
 				name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
 				var regexS = "[\\?&#]" + name + "=([^&#]*)";
@@ -56,19 +79,33 @@
 				});
 			};
 
-			chrome.browserAction.onClicked.addListener(function(tab) {
-				chrome.tabs.create({'url': chrome.extension.getURL('init.html')}, function(tab) {
-				});
-			});
 
-		</script>
-	</head>	
-	<body>
-		<div id="broadmask_listener"></div>
-		<script type="text/javascript">
-			// Prepare broadmask (load nacl module)
-			broadmask.run();
-		</script>
+
+			chrome.extension.onRequest.addListener(
+				function(request, sender, sendResponse) {
+					if (typeof request !== 'object') {
+						return;
+					}
+
+					if (request.message === 'newBMdataFromCS') {
+						broadmask.handleImages(request.data);
+					}
+
+				});
+
+				chrome.browserAction.onClicked.addListener(function(tab) {
+					chrome.tabs.create({'url': chrome.extension.getURL('init.html')}, function(tab) {
+					});
+				});
+
+			</script>
+		</head>	
+		<body>
+			<div id="broadmask_listener"></div>
+			<script type="text/javascript">
+				// Prepare broadmask (load nacl module)
+				broadmask.run();
+			</script>
+		</body>
 	</body>
-</body>
 </html>

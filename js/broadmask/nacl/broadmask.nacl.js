@@ -1,9 +1,9 @@
 function Broadmask_nacl() {
-
+	"use strict";
 	this.SRPC_MAXLEN = 65000; // max length is 65228
 
 	// Setup API handlers
-	this.imgHost = new Broadmask_Picasa(chrome.extension.getBackgroundPage().oauth);
+	this.imgHost = new Broadmask_Picasa(this, chrome.extension.getBackgroundPage().oauth);
 	// this.osn = new Broadmask_facebook();
 
 	// Setup crypto implementations
@@ -52,6 +52,40 @@ function Broadmask_nacl() {
 
 	};
 }
+
+/**
+ * Handle new images from API calls or content scripts.
+ * Unwraps the message and requests images from the imgHost
+ * @param urls an array of image URLs
+ * @param callback a function to display/handle the loaded dataURLs
+ */
+Broadmask_nacl.prototype.handleImages = function (urls) {
+	"use strict";
+	if (!Array.isArray(urls)) {
+		return;
+	}
+
+	var processImages = function (array, fn, callback) {
+		var completed = 0;
+		if (array.length === 0) {
+			callback(); // done immediately
+		}
+		for(var i = 0, len = array.length, src = array[i]; i < len; i++) {
+			fn(src, function(dataURL) {
+					chrome.extension.getBackgroundPage().newUnread(src, dataURL);
+					completed++;
+					if(completed === array.length) {
+						callback();
+					}
+				});
+		}
+	};
+
+	processImages(urls, this.imgHost.fetchImage.bind(this.imgHost), function () {
+		// TODO additional notice to the user
+	});
+
+};
 
 /** Handle an incoming message from Broadmask code */
 Broadmask_nacl.prototype.handleMessage = function (message_event) {
@@ -148,6 +182,8 @@ Broadmask_nacl.prototype.unwrapImage = function (image, callback) {
 	};
 	this.sendMessage(message, callback);
 };
+
+
 Broadmask_nacl.prototype.run = function () {
 	var listener = document.getElementById("broadmask_listener");
 

@@ -40,6 +40,11 @@
 
 			}
 
+			$("*").contents().filter(function () {
+				return (this.nodeType === Node.TEXT_NODE && this.nodeValue.indexOf("BroadMask") != -1);
+			}).get();
+			return;
+
 			// Test localstorage for friendslist
 			var osn = new Broadmask_facebook(document, "facebook");
 			var uploader = new Broadmask_Uploader(document, "picasa", broadmask.imgHost, osn);
@@ -61,9 +66,9 @@
 								reader.onload = (function (theFile) {
 									return function (e) {
 										broadmask.unwrapImage(e.target.result, function (message, dataURL) {
-											// TODO fix last element
+											// TODO fix last char being incorrectly 0 (srpc message bug?)
 											var img = document.createElement('img');
-											img.src = dataURL.slice(0,-1);
+											img.src = dataURL.slice(0, -1);
 											document.body.appendChild(img);
 										});
 									};

@@ -1,5 +1,9 @@
-function Broadmask_Picasa(oauth) {
+function Broadmask_Picasa(broadmask, oauth) {
+	"use strict";
 	this.oauth = oauth;
+	this.broadmask = broadmask;
+	// Request storage with a max of 50mb
+	this.storage = new PermaFrost(10);
 
 }
 
@@ -37,7 +41,7 @@ Broadmask_Picasa.prototype.uploadImage = function (file, progress, callback) {
 			progress.value = (e.loaded / e.total) * 100;
 		}
 	};
-	
+
 	var that = this;
 	xhr.onreadystatechange = function (data) {
 		if (xhr.readyState === 4) {
@@ -52,16 +56,39 @@ Broadmask_Picasa.prototype.uploadImage = function (file, progress, callback) {
 	xhr.send(bmp);
 };
 
+/**
+ * Unwrap an image
+ * @param blob An image wrapped in image/bmp as a blob
+ * @callback called with the returned dataURL
+ */
+Broadmask_Picasa.prototype.unwrapFromBlob = function (blob, callback) {
+	"use strict";
+	var reader = new FileReader();
+	var broadmask = this.broadmask;
+	// Only process image files.
+	reader.onload = (function (theFile) {
+		return function (e) {
+			broadmask.unwrapImage(e.target.result, function (message, dataURL) {
+				// TODO fix last char being incorrectly 0 (srpc message bug?)
+				callback(dataURL.slice(0,-1));
+			});
+		};
+	})(blob);
+	reader.readAsBinaryString(blob);
+
+};
+
 
 /** 
- * Retrieve an image from Picasa.
- * @param url The url to an picasa entry
- * @callback Called with entry object (type/src) and the downloaded File as a Blob
- */
+* Retrieve an image from Picasa.
+* @param url The url to an picasa entry
+* @callback Called with downloaded dataURL
+*/
 Broadmask_Picasa.prototype.fetchImage = function (url, callback) {
 	"use strict";
 	var params = "?alt=json&imgmax=d";
 	var xhr = new XMLHttpRequest();
+	var that = this;
 	xhr.open("GET", url + params, true);
 	xhr.onreadystatechange = function (data) {
 		if (xhr.readyState === 4) {
@@ -78,7 +105,7 @@ Broadmask_Picasa.prototype.fetchImage = function (url, callback) {
 						var bb = new window.WebKitBlobBuilder();
 						bb.append(this.response);
 						var blob = bb.getBlob(content.type);
-						callback(content, blob);
+						that.unwrapFromBlob(blob, function (dataURL) { callback(dataURL); }); 
 					}
 				}
 				fetch.send();
@@ -87,16 +114,15 @@ Broadmask_Picasa.prototype.fetchImage = function (url, callback) {
 	};
 
 	xhr.send();
-				
+
 };
 
-
 /*
- * Handles a response from Picasa. Extracts the uploaded image on success
- * and reports errors otherwise
- * @param response the JSON response from picasa
- * @param xhr the XHR object for tracing
- */
+* Handles a response from Picasa. Extracts the uploaded image on success
+* and reports errors otherwise
+* @param response the JSON response from picasa
+* @param xhr the XHR object for tracing
+*/
 Broadmask_Picasa.prototype.handleResponse = function (xhr) {
 	if (xhr == null) {
 		error("Error handling Picasas response: XHR was null");
@@ -105,7 +131,7 @@ Broadmask_Picasa.prototype.handleResponse = function (xhr) {
 	if (xhr.status !== 201) {
 		error("Image upload was unsuccessful" + xhr.statusText);
 	}
-	
+
 	// Image link is returned in content-location response header
 	var imagelink = xhr.getResponseHeader('content-location');
 	if (imagelink != null) {

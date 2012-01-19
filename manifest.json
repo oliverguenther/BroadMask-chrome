@@ -10,6 +10,15 @@
 		"default_popup": "main.html",
 		"default_icon": "icon.png"
 	},
+	"content_scripts": [
+    {
+      "matches": ["https://*.facebook.com/*"],
+      "js": [
+						"js/jquery.min.js", 
+						"js/contentscripts/facebook.js" 
+						]
+    }
+  ],
 	"default_locale": "en",
 	"permissions": [
 		"tabs",
