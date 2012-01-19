@@ -6,9 +6,23 @@
 		<title>Broadmask</title>
 		<link rel="stylesheet" href="css/bootstrap.css" type="text/css" charset="utf-8"/>
 		<link rel="stylesheet" href="css/popup.css" type="text/css" charset="utf-8"/>
+		<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" charset="utf-8">
+			$(document).ready(function() {
+				var bg = chrome.extension.getBackgroundPage();
+				if (typeof bg.unread === 'object') {
+					var unread = bg.unread;
+					$.each(unread, function (key, val) {
+						$("#new").append('<div><img src="' + val + '"/><p>Original image:<br/>' + key + '</p></div>');
+					});
+					bg.setRead();
+				}
+			});
+		</script>
 	</head>
 
 	<body>
+	<div id="new"></div>
 
 	</body>
 </html>
