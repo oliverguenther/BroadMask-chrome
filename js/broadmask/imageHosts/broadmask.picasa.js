@@ -78,13 +78,39 @@ Broadmask_Picasa.prototype.unwrapFromBlob = function (blob, callback) {
 
 };
 
+/** 
+* INTERNAL
+* Retrieve an image, either from local cache or from Picasa.
+* @param url The url to an picasa entry
+* @callback Called with downloaded / cached dataURL
+*/
+Broadmask_Picasa.prototype.fetchImage = function (url, callback) {
+	"use strict";
+	var storage = this.storage,
+		that = this;
+	storage.get(url, function (pval) {
+		if (pval) { 
+			console.log("cache hit!");
+			callback(pval); 
+		} else { 
+			console.log("Downloading... " + url);
+			that.downloadImage(url, function (dataURL) {
+				// Cache image for next time
+				storage.store(url, dataURL);
+				callback(dataURL);
+			}); 
+		}
+	});
+};
+
 
 /** 
-* Retrieve an image from Picasa.
+* INTERNAL
+* Download an image from Picasa.
 * @param url The url to an picasa entry
 * @callback Called with downloaded dataURL
 */
-Broadmask_Picasa.prototype.fetchImage = function (url, callback) {
+Broadmask_Picasa.prototype.downloadImage = function (url, callback) {
 	"use strict";
 	var params = "?alt=json&imgmax=d";
 	var xhr = new XMLHttpRequest();

@@ -1,14 +1,14 @@
 // Search for BM IDs in Stream Messages
 var refresh = function () {
 	"use strict";
-	var i, len, start, end, it, images,
+	var start, end, it, images,
 		messages = document.getElementsByClassName("messageBody");
 	console.log(messages);
 	
 	if (messages === null || typeof messages === 'undefined') {
 		return;
 	}
-	for (i = 0, len = messages.length; i < len; i++) {
+	for (var i = 0, len = messages.length; i < len; i++) {
 		it = messages[i].innerText;
 		if (it !== null && it !== 'undefined') {
 			start = it.indexOf('=== BEGIN BM DATA ===');
