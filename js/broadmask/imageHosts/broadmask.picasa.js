@@ -7,7 +7,6 @@ function Broadmask_Picasa(broadmask, oauth) {
 
 }
 
-
 /*
 * Uploads an image to Picasa Webalbums. Assumes a user has been logged in through oauth
 * @param message the response from broadmask
@@ -168,14 +167,11 @@ Broadmask_Picasa.prototype.handleResponse = function (xhr) {
 
 };
 
-Broadmask_Picasa.prototype.performAuth = function () {
-	this.oauth.authorize(function () {
-		// Auth successful / Token in storage
-		show_uploadform();
-	});
+Broadmask_Picasa.prototype.performAuth = function (callback) {
+	this.oauth.authorize(callback);
 };
 
-Broadmask_Picasa.prototype.revokeAuth = function () {
+Broadmask_Picasa.prototype.revokeAuth = function (callback) {
 	this.oauth.clearTokens();
-	location.reload(true);
+	callback();
 };

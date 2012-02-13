@@ -147,8 +147,10 @@ function shareOnWall(message, allowed_users, callback) {
 	sendFBData("https://graph.facebook.com/me/feed", data, callback);
 }
 
-function fbAuth() {
-	chrome.tabs.onUpdated.addListener(chrome.extension.getBackgroundPage().onFacebookLogin);
+function fbAuth(callback) {
+	chrome.tabs.onUpdated.addListener(function () {
+		chrome.extension.getBackgroundPage().onFacebookLogin(callback);
+	});
 	chrome.tabs.create({'url': "https://www.facebook.com/dialog/oauth?client_id=281109321931593&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token&scope=publish_stream,create_note,read_friendlists"},
 		null);
 }
@@ -156,7 +158,8 @@ function fbAuth() {
 /**
 * Remove the current token, if it exists
 */
-function fbLogout() {
+function fbRevokeAuth(callback) {
 	delete localStorage.fbtoken;
-	location.reload(true);
+	callback();
+	
 }

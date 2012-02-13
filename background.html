@@ -64,15 +64,15 @@
 					return decodeURIComponent(results[1].replace(/\+/g, " "));
 			}
 
-			function onFacebookLogin() {
+			function onFacebookLogin(callback) {
 				chrome.tabs.getAllInWindow(null, function(tabs) {
 					for (var i = 0; i < tabs.length; i++) {
 						if (tabs[i].url.indexOf("https://www.facebook.com/connect/login_success.html") == 0) {
 							var params = getParameterByName("access_token",tabs[i].url);
-							console.log("Found FB api params" + params);
 							localStorage.fbtoken = params;
 							chrome.tabs.onUpdated.removeListener(onFacebookLogin);
 							chrome.tabs.remove(tabs[i].id);
+							callback();
 							return;
 						}
 					}

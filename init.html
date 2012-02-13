@@ -6,8 +6,7 @@
 	<script src="js/broadmask/osn/broadmask.fb.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/broadmask/osn/broadmask.fb.api.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/broadmask/imageHosts/broadmask.uploader.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/ui/bootstrap-scrollspy.js" type="text/javascript" charset="utf-8"></script>
-	<script src="js/ui/bootstrap-buttons.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/ui/bootstrap.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/ui/ui.js" type="text/javascript" charset="utf-8"></script>
 	<script type="text/javascript" charset="utf-8">
 
@@ -18,7 +17,7 @@
 
 		$(document).ready(function() {
 			// Setup bootstrap scrollspy
-			$('body > .topbar').scrollSpy()
+			$('body > .topbar').scrollspy()
 			// test localstorage for Google token
 			if (oauth.hasToken()) {
 				$("#gloginbtn").toggleClass("success primary disabled");
@@ -36,49 +35,44 @@
 				$("#Picasa-Upload").show();
 			}
 
-			var addIMG = function (blob) {
-
-			}
-
 			$("*").contents().filter(function () {
 				return (this.nodeType === Node.TEXT_NODE && this.nodeValue.indexOf("BroadMask") != -1);
 			}).get();
-			return;
 
 			// Test localstorage for friendslist
 			var osn = new Broadmask_facebook(document, "facebook");
 			var uploader = new Broadmask_Uploader(document, "picasa", broadmask.imgHost, osn);
 
-			// Test find
-			var objs = findBMPosts(function (posts) {
-				// For each actor
-				$.each(posts, function (key,val) {
-					// For each image
-					$.each(val, function () {
-						broadmask.imgHost.fetchImage(this, function (entry, blob) {
-							console.log(entry);
-							if (entry.type !== "image/bmp") {
-								addIMG(blob);
-							} else if (entry.type === "image/bmp") {
-								// Unwrap the BMP before displaying it
-								var reader = new FileReader();
-								// Only process image files.
-								reader.onload = (function (theFile) {
-									return function (e) {
-										broadmask.unwrapImage(e.target.result, function (message, dataURL) {
-											// TODO fix last char being incorrectly 0 (srpc message bug?)
-											var img = document.createElement('img');
-											img.src = dataURL.slice(0, -1);
-											document.body.appendChild(img);
-										});
-									};
-								})(blob);
-								reader.readAsBinaryString(blob);
-							}
-						});
-					});
-				});
-			});
+			// // Test find
+			// var objs = findBMPosts(function (posts) {
+			// 	// For each actor
+			// 	$.each(posts, function (key,val) {
+			// 		// For each image
+			// 		$.each(val, function () {
+			// 			broadmask.imgHost.fetchImage(this, function (entry, blob) {
+			// 				console.log(entry);
+			// 				if (entry.type !== "image/bmp") {
+			// 					console.log("Unpadded image found!");
+			// 				} else if (entry.type === "image/bmp") {
+			// 					// Unwrap the BMP before displaying it
+			// 					var reader = new FileReader();
+			// 					// Only process image files.
+			// 					reader.onload = (function (theFile) {
+			// 						return function (e) {
+			// 							broadmask.unwrapImage(e.target.result, function (message, dataURL) {
+			// 								// TODO fix last char being incorrectly 0 (srpc message bug?)
+			// 								var img = document.createElement('img');
+			// 								img.src = dataURL.slice(0, -1);
+			// 								document.body.appendChild(img);
+			// 							});
+			// 						};
+			// 					})(blob);
+			// 					reader.readAsBinaryString(blob);
+			// 				}
+			// 			});
+			// 		});
+			// 	});
+			// });
 		});
 
 		// Called when FB SDK ready

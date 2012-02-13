@@ -4,7 +4,7 @@
 	"description": "__MSG_title__",
 	"icons": { "128": "icon.png" },
 	"background_page": "background.html",
-	"option_page": "options.html",
+	"options_page": "options.html",
 	"browser_action": {
 		"default_title": "Broadmask", 
 		"default_popup": "main.html",
@@ -22,6 +22,7 @@
 	"default_locale": "en",
 	"permissions": [
 		"tabs",
+		"notifications",
 		"unlimitedStorage",
 		"https://*.google.com/*",
 		"https://*.facebook.com/*",
