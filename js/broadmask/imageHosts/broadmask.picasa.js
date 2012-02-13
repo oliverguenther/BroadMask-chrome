@@ -67,9 +67,8 @@ Broadmask_Picasa.prototype.unwrapFromBlob = function (blob, callback) {
 	// Only process image files.
 	reader.onload = (function (theFile) {
 		return function (e) {
-			broadmask.unwrapImage(e.target.result, function (message, dataURL) {
-				// TODO fix last char being incorrectly 0 (srpc message bug?)
-				callback(dataURL.slice(0,-1));
+			broadmask.unwrapImage(e.target.result, function (message) {
+				callback(message.data);
 			});
 		};
 	})(blob);
@@ -88,7 +87,7 @@ Broadmask_Picasa.prototype.fetchImage = function (url, callback) {
 	var storage = this.storage,
 		that = this;
 	storage.get(url, function (pval) {
-		if (pval) { 
+		if (pval && 0) { 
 			console.log("cache hit!");
 			callback(pval); 
 		} else { 
@@ -130,7 +129,7 @@ Broadmask_Picasa.prototype.downloadImage = function (url, callback) {
 						var bb = new window.WebKitBlobBuilder();
 						bb.append(this.response);
 						var blob = bb.getBlob(content.type);
-						that.unwrapFromBlob(blob, function (dataURL) { callback(dataURL); }); 
+						that.unwrapFromBlob(blob, function (dataURL) { callback(atob(dataURL)); }); 
 					}
 				}
 				fetch.send();

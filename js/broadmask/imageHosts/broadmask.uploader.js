@@ -61,9 +61,9 @@ Broadmask_Uploader.prototype.newUpload = function (filename, dataURL) {
 	wrapper.appendChild(thumbdiv);
 	wrapper.appendChild(progress);
 	this.root.appendChild(wrapper);
-	this.broadmask.wrapImage(dataURL, function (message, file) {
+	this.broadmask.wrapImage(dataURL, function (message) {
 		// returned from bmp wrapping
-		that.host.uploadImage(atob(file), progress, function (status, url) {
+		that.host.uploadImage(atob(message.data), progress, function (status, url) {
 			if (url !== undefined) {
 				statusicon.src = chrome.extension.getURL("img/ok.png");
 				thumb.setAttribute("rel", url);

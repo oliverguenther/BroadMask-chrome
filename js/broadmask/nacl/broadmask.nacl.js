@@ -15,8 +15,6 @@ function Broadmask_nacl() {
 
 	// Handle callbacks for messages
 	this.cb = {};
-	// Array per uid for split packets
-	this.packets = {};
 
 	this.parseMethod = function parseMethod(data) {
 		if (!data || typeof data !== 'string') {
@@ -91,7 +89,6 @@ Broadmask_nacl.prototype.handleImages = function (urls) {
 Broadmask_nacl.prototype.handleMessage = function (message_event) {
 	var message = this.parseMethod(message_event.data);
 	var callback;
-	var data;
 	if (message === null || typeof message !== 'object') {
 		return;
 	}
@@ -101,30 +98,7 @@ Broadmask_nacl.prototype.handleMessage = function (message_event) {
 		console.log("Received message with no callback! " + message);
 		return;
 	}
-
-	// Check if it's a split message
-	if (message.hasOwnProperty("packetid") && message.hasOwnProperty("data")) {
-		if (message.packetid === "0") {
-			// first packet, init packet store
-			this.packets[message.uid] = [];
-		}
-		console.log("Arriving packet " + message.packetid + " for uid " + message.uid);
-		this.packets[message.uid].push(message.data);
-	} else if (message.hasOwnProperty("data")) {
-		console.log("Calling callback directly!");
-		callback(message, message.data);
-	} else {
-		if (typeof this.packets[message.uid] !== null) {
-			console.log("calling callback with packets");
-			data = this.packets[message.uid].join("");
-			callback(message, data);
-		} else {
-			console.log("Calling callback without anything");
-			callback(message);
-		}
-	}
-
-
+	callback(message);
 };
 
 Broadmask_nacl.prototype.sendMessage = function (message, callback) {
@@ -135,26 +109,7 @@ Broadmask_nacl.prototype.sendMessage = function (message, callback) {
 		var uid = Math.round(Math.random() * 1024);
 		message.uid = uid;
 		this.cb[uid] = callback;
-		// var data = btoa(message.data);
-		var data = message.data;
-		// split messages if necessary (SRPC BUG)
-		if (data.length > this.SRPC_MAXLEN) {
-			console.log("data size is " + data.length + " , needs to be split");
-			var packetid = 0;
-			while ((data.length % this.SRPC_MAXLEN) !== 0) {
-				var packet = data.substr(0, this.SRPC_MAXLEN);
-				data = data.substring(this.SRPC_MAXLEN);
-				this.module.postMessage("handlePacket uid:" + uid + " part:" + packetid + " data:" + packet);
-				packetid++;
-			}
-			if (data.length > 0) {
-				this.module.postMessage("handlePacket uid:" + uid + " part:" + packetid + " data:" + packet);
-			}
-			this.module.postMessage(message.name + " uid:" + uid);
-		} else {
-			// Send directly
-			this.module.postMessage(message.name + " uid:" + uid + "	data:" + data);
-		}
+		this.module.postMessage(message.name + " uid:" + uid + "	data:" + message.data);
 	} else {
 		console.log("Invalid callback/message " + message);
 	}

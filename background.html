@@ -92,12 +92,6 @@
 					}
 
 				});
-
-				chrome.browserAction.onClicked.addListener(function(tab) {
-					chrome.tabs.create({'url': chrome.extension.getURL('init.html')}, function(tab) {
-					});
-				});
-
 			</script>
 		</head>	
 		<body>
