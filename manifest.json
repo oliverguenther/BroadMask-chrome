@@ -7,7 +7,6 @@
 	"options_page": "options.html",
 	"browser_action": {
 		"default_title": "Broadmask", 
-		"default_popup": "main.html",
 		"default_icon": "icon.png"
 	},
 	"content_scripts": [
@@ -27,5 +26,8 @@
 		"https://*.google.com/*",
 		"https://*.facebook.com/*",
 		"http://gpg-keyserver.de/pks/lookup/*"
+	],
+	"plugins": [
+		{ "path": "broadmask.plugin", "public": true }
 	]
 }

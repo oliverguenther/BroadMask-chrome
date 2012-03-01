@@ -18,6 +18,51 @@
 
 		<script type="text/javascript" charset="utf-8">
 
+					function plugin0()
+		{
+			return document.getElementById('plugin0');
+		}
+		plugin = plugin0;
+		function addEvent(obj, name, func)
+		{
+			if (window.addEventListener) {
+				obj.addEventListener(name, func, false); 
+			} else {
+				obj.attachEvent("on"+name, func);
+			}
+		}
+
+		function load()
+		{
+			addEvent(plugin(), 'test', function(){
+				alert("Received a test event from the plugin.")
+			});
+		}
+		function pluginLoaded() {
+			alert("Plugin loaded!");
+		}
+
+		function addTestEvent()
+		{
+			addEvent(plugin(), 'echo', function(txt,count){
+				alert(txt+count);
+			});
+		}
+
+		function testEvent()
+		{
+			plugin().testEvent();
+		}
+
+		function pluginValid()
+		{
+			if(plugin().valid){
+				alert(plugin().echo("This plugin seems to be working!"));
+			} else {
+				alert("Plugin is not working :(");
+			}
+		}
+
 			var oauth = ChromeExOAuth.initBackgroundPage({
 				'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
 				'authorize_url': 'https://www.google.com/accounts/OAuthAuthorizeToken',
@@ -30,13 +75,29 @@
 
 			var broadmask = new Broadmask_nacl();
 
-			/** caches images for popup */
-			var unread, badgecount;
-			setRead();
+			Object.size = function(obj) {
+				var size = 0, key;
+				for (key in obj) {
+					if (obj.hasOwnProperty(key)) size++;
+				}
+				return size;
+			};
 
-			function setRead() {
-				unread = {};
-				badgecount = 0;
+			/** caches images for popup */
+			var unread = {}, 
+			badgecount = Object.size(unread),
+			bmTabid = null;
+
+			if (localStorage.unreadItems) {
+				unread = JSON.parse(localStorage.unreadItems);
+			}
+
+			function setRead(key) {
+				delete unread[key];
+				if (badgecount > 0) {
+					badgecount--;
+				}
+				localStorage.unreadItems = JSON.stringify(unread);
 				chrome.browserAction.setBadgeText({text: ""});
 			}
 
@@ -48,10 +109,10 @@
 					badgecount++;
 				}
 				unread[key] = val;
+				localStorage.unreadItems = JSON.stringify(unread);
 				chrome.browserAction.setBadgeText({text: badgecount.toString()});
 				chrome.browserAction.setBadgeBackgroundColor({color: [118, 248, 123, 255]});
 			}
-
 
 			function getParameterByName(name, url) {
 				name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
@@ -88,9 +149,24 @@
 					}
 
 					if (request.message === 'newBMdataFromCS') {
-						broadmask.handleImages(request.data);
+						broadmask.handleImages(request.data, function() {
+							if (bmTabid !== null) {
+								chrome.tabs.sendRequest(bmTabid, 'updateStatus', function() {
+									chrome.tabs.update(bmTabid, {active: true});
+								});
+							}
+						});
 					}
 
+				});
+
+				chrome.browserAction.onClicked.addListener(function() {
+					chrome.tabs.create({url: chrome.extension.getURL("broadmask.html")}, function(tab) {
+						bmTabid = tab.id;
+						chrome.tabs.onRemoved.addListener(function () {
+							bmTabid = null;
+						});
+					});
 				});
 			</script>
 		</head>	
@@ -100,6 +176,9 @@
 				// Prepare broadmask (load nacl module)
 				broadmask.run();
 			</script>
+			<object id="plugin0" type="application/x-broadmask" width="300" height="300">
+				<param name="onload" value="pluginLoaded" />
+			</object><br />
 		</body>
 	</body>
 </html>

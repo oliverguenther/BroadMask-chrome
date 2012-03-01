@@ -94,6 +94,7 @@ Broadmask_Picasa.prototype.fetchImage = function (url, callback) {
 			console.log("Downloading... " + url);
 			that.downloadImage(url, function (dataURL) {
 				// Cache image for next time
+				console.log("Got " + url);
 				storage.store(url, dataURL);
 				callback(dataURL);
 			}); 

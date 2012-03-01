@@ -20,17 +20,20 @@ function Broadmask_Uploader(d, id, host, sharecb) {
 		}
 	};
 
+
 	var filepicker = d.createElement('input'),
 		filewrapper = d.createElement('div'),
-		dropbox = d.createElement('div');
+		dropbox = d.createElement('div'),
+		form = d.createElement('form');
 
 	filepicker.id = "filepicker-" + id;
 	filewrapper.className = "filepicker";
 	filepicker.type = "file";
 	filepicker.multiple = "true";
 	dropbox.id = "dropzone-" + id;
-	dropbox.innerText = "drop files here!"; // chrome.i18n.getMessage("dropzone") + this.host.name;
+	dropbox.innerText = "or drop some files here!"; // chrome.i18n.getMessage("dropzone") + this.host.name;
 	dropbox.className = "dropzone";
+	form.className = "form form-horizontal";
 	// setup listeners
 	dropbox.addEventListener('dragover', this.fileInputs.bind(this), false);
 	dropbox.addEventListener('drop', this.fileInputs.bind(this), false);
@@ -53,6 +56,7 @@ Broadmask_Uploader.prototype.newUpload = function (filename, dataURL) {
 	wrapper.className = "uploadprogress";
 	wrapper.id = Math.round(Math.random() * 100);
 	thumb.className = "thumb";
+	thumbdiv.className = "picasa-thumbwrapper";
 	thumb.src = dataURL;
 	thumb.title = filename;
 	progress.value = 0;

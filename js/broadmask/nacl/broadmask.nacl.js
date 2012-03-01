@@ -57,7 +57,7 @@ function Broadmask_nacl() {
  * @param urls an array of image URLs
  * @param callback a function to display/handle the loaded dataURLs
  */
-Broadmask_nacl.prototype.handleImages = function (urls) {
+Broadmask_nacl.prototype.handleImages = function (urls, cb) {
 	"use strict";
 	if (!Array.isArray(urls)) {
 		return;
@@ -68,7 +68,8 @@ Broadmask_nacl.prototype.handleImages = function (urls) {
 		if (array.length === 0) {
 			callback(); // done immediately
 		}
-		for(var i = 0, len = array.length, src = array[i]; i < len; i++) {
+		for(var i = 0, len = array.length; i < len; i++) {
+			var src = array[i];
 			fn(src, function(dataURL) {
 					chrome.extension.getBackgroundPage().newUnread(src, dataURL);
 					completed++;
@@ -80,7 +81,7 @@ Broadmask_nacl.prototype.handleImages = function (urls) {
 	};
 
 	processImages(urls, this.imgHost.fetchImage.bind(this.imgHost), function () {
-		// TODO additional notice to the user
+		cb();
 	});
 
 };

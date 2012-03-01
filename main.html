@@ -10,26 +10,23 @@
 		<script type="text/javascript" charset="utf-8">
 			$(document).ready(function() {
 				var bg = chrome.extension.getBackgroundPage();
-				if (typeof bg.unread === 'object') {
-					var unread = bg.unread;
-					$.each(unread, function (key, val) {
-						$("#new").append('<div><img src="' + val + '"/><p>Original image:<br/>' + key + '</p></div>');
+					$.each(bg.unread, function (key, val) {
+						$("#new").append('<div class="thumb"><img src="' + val + '"/><a href="' + key + '">Original</a></div>');
 					});
-					bg.setRead();
-				}
 			});
 		</script>
 	</head>
 
 	<body>
-		<div id="topbar">
-			<span class="title"><span i18n>extName</span></span>
-			<nav>
-				<a id="options" class="toolbarbtn" target="_blank" href="options.html"/></a>
-			</nav>
+		<div id="wrapper">
+			<div id="topbar">
+				<span class="title"><span i18n>extName</span></span>
+				<nav>
+					<a id="options" class="toolbarbtn" target="_blank" href="options.html"/></a>
+				</nav>
+			</div>
+			<div id="new"></div>
 		</div>
-		<div id="new"></div>
-		<div style="clear:both"></div>
 	</body>
 	<script type="text/javascript">
 

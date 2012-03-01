@@ -39,3 +39,38 @@ body {
 .topbar .btn {
 	border: 0;
 }
+
+section {
+	padding-top: 25px;
+}
+
+
+.filepicker {
+	text-align: center;
+}
+
+.filechoose {
+	padding-top: 20px;
+}
+
+.dropzone {
+	background: whiteSmoke;
+	text-align: center;
+	color: #B2B2B2;
+	padding: 50px;
+	height
+	border: 1px dashed #ccc;
+}
+
+.thumb {
+	width: 150px;
+	padding: 10px;
+	border: 1px solid #ddd;
+	margin-right: 20px;
+}
+
+.uploadprogress, .newthumbs {
+	float: left;
+	margin-right: 10px;
+	padding: 25px;
+}
