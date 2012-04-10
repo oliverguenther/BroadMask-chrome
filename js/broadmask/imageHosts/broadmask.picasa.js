@@ -2,7 +2,7 @@ function Broadmask_Picasa(broadmask, oauth) {
 	"use strict";
 	this.oauth = oauth;
 	this.broadmask = broadmask;
-	// Request storage with a max of 50mb
+	// Request storage with a max of 10mb
 	this.storage = new PermaFrost(10);
 
 }

@@ -5,33 +5,35 @@ function Broadmask_facebook(d, id) {
 	this.images = null;
 	this.root = d.getElementById(id);
 
-	// Hide by default
-	$(this.root).hide();
-
-	this.shareBtn = d.createElement('button');
-	this.shareWith = d.createElement('select');
-	this.wrapper = d.createElement('div');
-
-	this.shareBtn.className = "btn primary";
-	this.shareBtn.id = "shareBtn";
-	this.shareBtn.innerText = "Share now"; // i18n
-	var sharef = this.share.bind(this);
+	var sharef = this.share.bind(this),
+	that = this;
 	$(d).ready(function () {
-		$('#shareBtn').click(sharef);
+		$('#share-submit-btn').click(sharef);
+		$('#share-reset-btn').click(function () {
+			$("." + that.images).remove();
+			$("#share-select").attr("disabled", "disabled");
+			$("#share-submit-btn").attr("disabled", "disabled");
+			$("#share-reset-btn").attr("disabled", "disabled");
+		});
 	});
-
-	this.wrapper.appendChild(this.shareWith);
-	this.wrapper.appendChild(this.shareBtn);
-	this.root.appendChild(this.wrapper);
-	
-	this.showShare = function () {
-		$(this.root).show();
-	};
 
 	// fetch friends
 	this.fetchFriends();
 
 }
+
+Broadmask_facebook.prototype.receiversFromID = function (friendlistID) {
+	"use strict";
+	if (localStorage[friendlistID]) {
+		var friendlist = JSON.parse(localStorage[friendlistID]),
+			members = [];
+		$.each(friendlist, function () {
+			members.push(this.id);
+		});
+		return members;
+	}
+	return null;
+};
 
 Broadmask_facebook.prototype.armorData = function (dataArr) {
 	"use strict";
@@ -46,21 +48,17 @@ Broadmask_facebook.prototype.armorData = function (dataArr) {
 Broadmask_facebook.prototype.share = function () {
 	"use strict";
 	var thumbs = document.getElementsByClassName(this.images),
+		selected = $("#share-select option:selected").val(),
+		receivers = this.receiversFromID(selected),
+		that = this,
 		toupload = [];
 	$.each(thumbs, function () {
-		var target = $(this).attr('rel');
-		if (target !== null && target !== undefined) {
-			toupload.push(target);
-		}
+		that.broadmask.uploadImage(selected, receivers, this.src, function (data) {
+			var image = document.createElement("img");
+			image.src = "data:image/bmp;base64," + data;
+			$("#status").append(image);
+		});
 	});
-
-	if (toupload.length > 0) {
-		shareOnWall(this.armorData(toupload), [this.shareWith.value]);
-	} else {
-		// Nothing to share?
-		console.log("Facebook share received no thumbs to share!");
-	}
-
 };
 
 /*
@@ -72,8 +70,51 @@ Broadmask_facebook.prototype.enableSharing = function (thumbClassname) {
 	"use strict";
 	if (thumbClassname) {
 		this.images = thumbClassname;
-		this.showShare();
+		$("#share-select").removeAttr("disabled").empty();
+		$("#share-submit-btn").removeAttr("disabled");
+		$("#share-reset-btn").removeAttr("disabled");
+		this.fetchFriends();
 	}
+};
+
+
+Broadmask_facebook.prototype.updateFriendlists = function (callback) {
+	"use strict";
+
+	var fetchFriendlistMembers = function (id, callback) {
+		getFBData("https://graph.facebook.com/" + id + "/members", function (members) {
+			if (Array.isArray(members.data) && members.data.length > 0) {
+				localStorage[id] = JSON.stringify(members.data);
+			} else {
+				console.log('Could not fetch members for friendlist ' + id);
+			}
+			callback();
+		});
+	};
+
+	var fetchFriendlists = function (friendlists, callback) {
+		var completed = 0;
+		if (friendlists.length === 0) {
+			callback();
+		}
+		for(var i = 0, len = friendlists.length; i < len; i++) {
+			fetchFriendlistMembers(friendlists[i], function() {
+				completed++;
+				if(completed === friendlists.length) {
+						callback();
+				}
+			});
+		}
+	};
+
+	getFBData("https://graph.facebook.com/me/friendlists", function (friendlists) {
+		localStorage.friendlists = JSON.stringify(friendlists.data);
+		var arr = [];
+		$.each(friendlists.data, function () {
+			arr.push(this.id);
+		});
+		fetchFriendlists(arr, callback);
+	});
 };
 
 /*
@@ -90,19 +131,19 @@ Broadmask_facebook.prototype.fetchFriends = function () {
 		update,
 		that = this;
 	update = function () {
-		var friendlists = JSON.parse(localStorage.friendlists),
-			options = [];
-		if (typeof friendlists !== "undefined") {
+		if (localStorage.friendlists) {
+			var friendlists = JSON.parse(localStorage.friendlists),
+				options = [];
 			$.each(friendlists, function () {
 				// If friendlist has locally stored members
 				if (typeof localStorage[this.id] !== "undefined") {
 					options.push('<option value="' + this.id + '">' + this.name + '</option>');
 				}
 			});
-		}
-		if (options.length > 0) {
-			$(that.shareWith).append(options.join(''));
-			return true;
+			if (options.length > 0) {
+				$("#share-select").append(options.join(''));
+				return true;
+			}
 		}
 		return false;
 	};
@@ -110,6 +151,6 @@ Broadmask_facebook.prototype.fetchFriends = function () {
 	// check localstorage first
 	if (!update()) {
 		// Re-Fetch all Friendlists and update whenever it returns
-		fetchFriendlists(update);
+		this.updateFriendlists(update);
 	}
 };

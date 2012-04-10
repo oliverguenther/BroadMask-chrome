@@ -53,6 +53,10 @@ section {
 	padding-top: 20px;
 }
 
+#share-form {
+	margin-top: 20px;
+}
+
 .dropzone {
 	background: whiteSmoke;
 	text-align: center;

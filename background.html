@@ -1,67 +1,15 @@
 <html>
 	<head>
 		<!-- utils -->
+		<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/util/chrome_ex_oauth.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/util/chrome_ex_oauth_simple.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/util/permafrost/permafrost.js" type="text/javascript" charset="utf-8"></script>
-		<!-- Broadmask native client implementation -->
-		<script src="js/broadmask/nacl/broadmask.nacl.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/broadmask/nacl/crypto/broadmask.nacl.aes.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/broadmask/nacl/crypto/broadmask.nacl.be.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/broadmask/nacl/crypto/broadmask.nacl.openpgp.js" type="text/javascript" charset="utf-8"></script>
-		<!-- Broadmask JS implementation -->
+		<!-- Broadmask NPAPI bridge -->
 		<script src="js/broadmask/broadmask.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/broadmask/imageHosts/broadmask.picasa.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/broadmask/crypto/broadmask.aes.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/broadmask/crypto/broadmask.be.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/broadmask/crypto/broadmask.openpgp.js" type="text/javascript" charset="utf-8"></script>
 
 		<script type="text/javascript" charset="utf-8">
-
-					function plugin0()
-		{
-			return document.getElementById('plugin0');
-		}
-		plugin = plugin0;
-		function addEvent(obj, name, func)
-		{
-			if (window.addEventListener) {
-				obj.addEventListener(name, func, false); 
-			} else {
-				obj.attachEvent("on"+name, func);
-			}
-		}
-
-		function load()
-		{
-			addEvent(plugin(), 'test', function(){
-				alert("Received a test event from the plugin.")
-			});
-		}
-		function pluginLoaded() {
-			alert("Plugin loaded!");
-		}
-
-		function addTestEvent()
-		{
-			addEvent(plugin(), 'echo', function(txt,count){
-				alert(txt+count);
-			});
-		}
-
-		function testEvent()
-		{
-			plugin().testEvent();
-		}
-
-		function pluginValid()
-		{
-			if(plugin().valid){
-				alert(plugin().echo("This plugin seems to be working!"));
-			} else {
-				alert("Plugin is not working :(");
-			}
-		}
 
 			var oauth = ChromeExOAuth.initBackgroundPage({
 				'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
@@ -73,7 +21,8 @@
 				'app_name': 'BroadMask'
 			});
 
-			var broadmask = new Broadmask_nacl();
+			var broadmask = new Broadmask();
+
 
 			Object.size = function(obj) {
 				var size = 0, key;
@@ -87,6 +36,12 @@
 			var unread = {}, 
 			badgecount = Object.size(unread),
 			bmTabid = null;
+
+
+			$(document).ready(function () {
+				// start NPAPI plugin
+				broadmask.run();
+			});
 
 			if (localStorage.unreadItems) {
 				unread = JSON.parse(localStorage.unreadItems);
@@ -114,6 +69,10 @@
 				chrome.browserAction.setBadgeBackgroundColor({color: [118, 248, 123, 255]});
 			}
 
+			function pluginLoaded() {
+				broadmask.moduleDidLoad();
+			}
+
 			function getParameterByName(name, url) {
 				name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
 				var regexS = "[\\?&#]" + name + "=([^&#]*)";
@@ -125,7 +84,7 @@
 					return decodeURIComponent(results[1].replace(/\+/g, " "));
 			}
 
-			function onFacebookLogin(callback) {
+			function onFacebookLogin() {
 				chrome.tabs.getAllInWindow(null, function(tabs) {
 					for (var i = 0; i < tabs.length; i++) {
 						if (tabs[i].url.indexOf("https://www.facebook.com/connect/login_success.html") == 0) {
@@ -133,7 +92,6 @@
 							localStorage.fbtoken = params;
 							chrome.tabs.onUpdated.removeListener(onFacebookLogin);
 							chrome.tabs.remove(tabs[i].id);
-							callback();
 							return;
 						}
 					}
@@ -171,14 +129,8 @@
 			</script>
 		</head>	
 		<body>
-			<div id="broadmask_listener"></div>
-			<script type="text/javascript">
-				// Prepare broadmask (load nacl module)
-				broadmask.run();
-			</script>
-			<object id="plugin0" type="application/x-broadmask" width="300" height="300">
-				<param name="onload" value="pluginLoaded" />
-			</object><br />
+			<div id="broadmask_listener">
+			</div>
 		</body>
 	</body>
 </html>

@@ -21,32 +21,17 @@ function Broadmask_Uploader(d, id, host, sharecb) {
 	};
 
 
-	var filepicker = d.createElement('input'),
-		filewrapper = d.createElement('div'),
-		dropbox = d.createElement('div'),
-		form = d.createElement('form');
-
-	filepicker.id = "filepicker-" + id;
-	filewrapper.className = "filepicker";
-	filepicker.type = "file";
-	filepicker.multiple = "true";
-	dropbox.id = "dropzone-" + id;
-	dropbox.innerText = "or drop some files here!"; // chrome.i18n.getMessage("dropzone") + this.host.name;
-	dropbox.className = "dropzone";
-	form.className = "form form-horizontal";
+	var dropbox = this.d.getElementById("files-dropzone"),
+		filepicker = this.d.getElementById("files-picker");
 	// setup listeners
 	dropbox.addEventListener('dragover', this.fileInputs.bind(this), false);
 	dropbox.addEventListener('drop', this.fileInputs.bind(this), false);
 	filepicker.addEventListener('change', this.fileInputs.bind(this), false);
-	filewrapper.appendChild(filepicker);
-	this.root.appendChild(filewrapper);
-	this.root.appendChild(dropbox);
-
 }
 
-Broadmask_Uploader.prototype.newUpload = function (filename, dataURL) {
+Broadmask_Uploader.prototype.addFile = function (filename, dataURL) {
 	"use strict";
-	var progress = this.d.createElement('progress'),
+	var preview = this.d.getElementById("files-preview"),
 		wrapper = this.d.createElement('div'),
 		statusicon = this.d.createElement('img'),
 		thumbdiv = this.d.createElement('div'),
@@ -59,29 +44,12 @@ Broadmask_Uploader.prototype.newUpload = function (filename, dataURL) {
 	thumbdiv.className = "picasa-thumbwrapper";
 	thumb.src = dataURL;
 	thumb.title = filename;
-	progress.value = 0;
-	progress.max = 100;
 	thumbdiv.appendChild(thumb);
 	wrapper.appendChild(thumbdiv);
-	wrapper.appendChild(progress);
 	this.root.appendChild(wrapper);
-	this.broadmask.wrapImage(dataURL, function (message) {
-		// returned from bmp wrapping
-		that.host.uploadImage(atob(message.data), progress, function (status, url) {
-			if (url !== undefined) {
-				statusicon.src = chrome.extension.getURL("img/ok.png");
-				thumb.setAttribute("rel", url);
-				// enable sharing option for all uploaded files
-				that.share.enableSharing('thumb');
-			} else {
-				statusicon.src = chrome.extension.getURL("img/warning.png");
-				// TODO allow retry with dataURL (popover)
-			}
-			wrapper.replaceChild(statusicon, progress);
-		});
-	});
-
+	that.share.enableSharing('thumb');
 };
+
 
 /*
 * Handle user files, and upload them to the image hoster
@@ -101,7 +69,7 @@ Broadmask_Uploader.prototype.handleFiles = function (files) {
 
 	initRead = function (theFile) {
 		return function (e) {
-			that.newUpload(theFile.name, e.target.result);
+			that.addFile(theFile.name, e.target.result);
 		};
 	};
 	// Loop through the FileList and render image files as thumbnails.

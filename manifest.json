@@ -26,8 +26,5 @@
 		"https://*.google.com/*",
 		"https://*.facebook.com/*",
 		"http://gpg-keyserver.de/pks/lookup/*"
-	],
-	"plugins": [
-		{ "path": "broadmask.plugin", "public": true }
 	]
 }
