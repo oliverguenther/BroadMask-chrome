@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<title>Updates</title>
+		<link rel="stylesheet" href="../css/bootstrap.css" type="text/css" charset="utf-8"/>
+		<link rel="stylesheet" href="../css/app.css" type="text/css" charset="utf-8"/>
+		<script src="/shared/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/jquery.watch.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/app.js" type="text/javascript" charset="utf-8"></script>
+
+		<script type="text/javascript" charset="utf-8">
+			function print_instances() {
+				if (localStorage.cached_instances) {
+					var instances = JSON.parse(localStorage.cached_instances),
+					rows = [];
+					$.each(instances, function(i, instance) {
+						rows.push("<tr><td>");
+						rows.push(instance.id);
+						rows.push("</td><td>");
+						rows.push(instance.size);
+						rows.push("</td><td>");
+						$.each(instance.receivers, function(i, userid) {
+							var name = userid2name(userid);
+							rows.push(name);
+							if (i !== instance.receivers.length - 1) {
+								rows.push(", ");
+							}
+						});
+						rows.push("</td></tr>");
+					});
+					$("#instances").append('<table class="table table-bordered table-striped"><thead><tr><th>Instance</th><th>Size</th><th>Receivers</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
+				}
+			}
+
+			$(document).ready(function () {
+				print_instances();
+				
+				if (localStorage.cached_users) {
+				} else {
+					$("#create_instance :input").attr("disabled", true);
+					$("#create_users_note").show();
+				}
+
+				$("#add_user").typeahead({});
+			});
+		</script>
+	</head>
+	<body>
+		<div id="header">
+			<h1><span i18n>extName</span> <small><span i18n>title</span></small></h1>
+		</div>
+		<div class="container">
+			<div class="row">
+				<div class="span3">
+					<ul id="navbar" class="nav nav-list">
+						<li class="nav-header">Facebook</li>
+						<li>
+						<a href="updates.html"><i class="icon-eye-open"></i> Updates</a>
+						</li>
+						<li>
+						<a href="upload.html"><i class="icon-camera"></i> Upload photos</a>
+						</li>
+						<li class="active">
+						<a href="instances.html"><i class="icon-white icon-lock"></i> Manage instances</a>
+						</li>
+						<li>
+						<a href="users.html"><i class="icon-user"></i> Manage users</a>
+						</li>
+						<li class="nav-header">Broadmask</li>
+						<li>
+						<a href="settings.html"><i class="icon-cog"></i> Settings</a>
+						</li>
+						<li class="divider"></li>
+						<li>
+						<a href="about.html"><i class="icon-info-sign"></i> About</a>
+						</li>
+					</ul>
+				</div>	
+				<div id="app-content" class="span9">
+					<div class="content">
+						<div class="page-header">
+							<h3>Instances <small>Manage private channels with your friends</small></h3>
+						</div>	
+						<div id="instances">
+						</div>
+						<div>
+							<div id="create_users_note" class="alert alert-block alert-error">
+								<h4 class="alert-heading">No user keys available!</h4>
+								<p>
+								No user-key mapping is available. You'll need a map of your friends to their <strong>PGP</strong> Public Key.
+								<br/>Create a new mapping:  <a href="users.html"><i class="icon-user"></i><strong> Manage Users tab</strong></a>
+								</p>
+							</div>
+							<form id="create_instance" class="form form-horizontal">
+								<div class="control-group">
+									<label class="control-label" for="instance_name">Instance name</label>
+									<div class="controls">
+										<input type="text" class="input-xlarge" id="instance_name">
+										<p class="help-block light">Enter the name of your instance. This is a <strong>private identifier</strong> and not shared with others.</p>
+									</div>
+								</div>
+								<div class="control-group">
+									<label class="control-label" for="instance_type">Instance Type</label>
+									<div class="controls">
+										<select id="instance_type">
+											<option value="bes">Broadcast Encryption</option>
+											<option value="sk">Shared-Key Encryption</option>
+										</select>
+										<p class="help-block light">
+										Select the encryption method to use within this instance.<br/>
+										<dl class="light">
+											<dt>Broadcast Encryption</dt>
+											<dd>A broadcast encryption system uses pairing-based cryptography to derive a symmetric key. Use this variant if you wish to encrypt content for a <strong>varying</strong> subset of your friends</dd>
+											<dt>Shared-Key Encryption</dt>
+											<dd>Share the content with a <strong>fixed</strong> symmetric key. Use this scheme if you <strong>always</strong> share with the same number of receivers.</dd>
+										</dl>
+										</p>
+									</div>
+								</div>
+								<div class="control-group">
+									<label class="control-label" for="add_user">Add user</label>
+									<div class="controls">
+										<div class="input-append">
+											<input class="span3" id="add_user" size="24" type="text"><button class="btn btn-inverse" type="button">Add</button>
+										</div>
+										<p class="help-block light">
+										Enter the names of you're friends you wish to add to this scheme.<br/><strong>Note:</strong> If you select <em>Broadcast Encryption</em>, you can select the receivers each time your share new content!
+										</p>
+									</div>
+								</div>
+								<div class="form-actions">
+									<button type="submit" class="btn btn-success">Create instance</button>
+									<button class="btn">Reset</button>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+		</body>
+		<script src="../js/i18n.js" type="text/javascript" charset="utf-8"></script>
+	</html>

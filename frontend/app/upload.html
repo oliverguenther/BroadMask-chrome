@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<title>Upload photos</title>
+		<link rel="stylesheet" href="../css/bootstrap.css" type="text/css" charset="utf-8"/>
+		<link rel="stylesheet" href="../css/app.css" type="text/css" charset="utf-8"/>
+		<script src="/shared/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/jquery.watch.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/app.js" type="text/javascript" charset="utf-8"></script>
+		<!-- Picasa frontend script -->
+		<script src="../js/api/broadmask.picasa.js" type="text/javascript" charset="utf-8"></script>
+		<!-- Facebook background script -->
+		<script src="/backend/js/api/broadmask.facebook.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/api/broadmask.facebook.js" type="text/javascript" charset="utf-8"></script>
+
+		<script type="text/javascript" charset="utf-8">
+			var bg = chrome.extension.getBackgroundPage();
+			var broadmask = bg.broadmask;
+			$(document).ready(function() {
+				var osn = new Broadmask_facebook(document, "facebook");
+				var uploader = new Broadmask_Uploader(document, "picasa", broadmask.imgHost, osn);
+			});
+		</script>
+
+	</head>
+	<body>
+		<div id="header">
+			<h1><span i18n>extName</span> <small><span i18n>title</span></small></h1>
+		</div>
+		<div class="container">
+			<div class="row">
+				<div class="span3">
+					<ul id="navbar" class="nav nav-list">
+						<li class="nav-header">Facebook</li>
+						<li>
+						<a href="updates.html"><i class="icon-eye-open"></i> Updates</a>
+						</li>
+						<li class="active">
+						<a href="upload.html"><i class="icon-white icon-camera"></i> Upload photos</a>
+						</li>
+						<li>
+						<a href="instances.html"><i class="icon-lock"></i> Manage instances</a>
+						</li>
+						<li>
+						<a href="users.html"><i class="icon-user"></i> Manage users</a>
+						</li>
+						<li class="nav-header">Broadmask</li>
+						<li>
+						<a href="settings.html"><i class="icon-cog"></i> Settings</a>
+						</li>
+						<li class="divider"></li>
+						<li>
+						<a href="about.html"><i class="icon-info-sign"></i> About</a>
+						</li>
+					</ul>
+				</div>	
+				<div id="app-content" class="span9">
+					<div class="content">
+						<div class="page-header">
+							<h3>Upload photos <small> Share new photos with your group</small></h3>
+						</div>	
+						<div id="picasa">
+							<div class="filepicker"><input id="files-picker" type="file" multiple=""></div>
+							<div id="files-dropzone" class="dropzone">or drop some files here!</div>
+							<div id="files-preview"></div>
+							<hr>
+							<form id="share-form" class="form-horizontal">
+								<div class="control-group">
+									<label class="control-label" for="share-select">Share with</label>
+									<div class="controls">
+										<select id="share-select" disabled>
+										</select>
+									</div>
+								</div>
+								<div id="sharestatus"></div>
+								<div class="form-actions">
+									<a id="share-submit-btn" class="btn btn-success" disabled><i class="icon-white icon-arrow-up"></i> Share content</a>
+									<a id="share-reset-btn"class="btn" disabled>Delete batch</a>
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			</div>
+		</body>
+		<script src="../js/i18n.js" type="text/javascript" charset="utf-8"></script>
+	</html>

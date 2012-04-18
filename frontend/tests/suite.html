@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<head>
+	<link rel="stylesheet" href="css/bootstrap.css" type="text/css" charset="utf-8"/>
+	<link rel="stylesheet" href="css/base.css" type="text/css" charset="utf-8"/>
+	<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript" charset="utf-8">
+		function plugin0()
+		{
+			return document.getElementById('plugin0');
+		}
+		plugin = plugin0;
+
+		function log(msg) {
+			$("#log").append("<p class=\"well\">" + msg + "</p>");
+		}
+
+		function sklog(msg) {
+			$("#sk_log").append("<p class=\"well\">" + msg + "</p>");
+		}
+
+		function pluginLoaded() {
+			if (plugin().valid === true) {
+				log("starting sending instance 'test'");
+				var public_params = plugin().start_sender_instance("test", 256);
+				log("Public params: " + public_params);
+				log("(Size " + public_params.length + " bytes)");
+				var members = ["a", "b", "c", "d"];
+				var receivers = ["a", "b", "c"];
+				for (var i = 0; i < members.length; i += 1) {
+					var pseudonym = plugin().add_member("test", members[i]);
+					var key = plugin().get_member_sk("test", members[i]);
+					log("Mapping member " + members[i] + " to " + pseudonym + " . Key: " + key + " (size " + key.length + ")");
+				}
+				var plaintext = "This is a test string.";
+				log("Encrypting '" + plaintext + "' using sending instance 'test' to " + members.join(", "));
+				var ciphertext = plugin().encrypt_b64("test", receivers, plaintext, false);
+				log("Output (HDR, receivers, AES IV) + AES encrypted ct is " + ciphertext);
+				log("(Size: " + ciphertext.length + " bytes)");
+				var sk_ciphertext = plugin().sk_encrypt_b64(plaintext, false);
+				var sk_ciphertext_o = JSON.parse(sk_ciphertext);
+				sklog("Encrypting '" + plaintext + " with SK-system");
+				sklog("IV " + sk_ciphertext_o.iv + " (length " + sk_ciphertext_o.iv.length + ")");
+				sklog("AES KEY " + sk_ciphertext_o.key + " (length " + sk_ciphertext_o.key.length + ")");
+				sklog("(Distributed among 256 members -> 256 * " + sk_ciphertext_o.key.length + " = " + (sk_ciphertext_o.key.length * 256) + " bytes");
+				sklog("CT " + sk_ciphertext_o.ct + " (length " + sk_ciphertext_o.ct.length + ")");
+
+
+				log("Starting receiver instance 'receiver_a'");
+				var sk_a = plugin().get_member_sk("test", "a");
+				log("sk_a " + sk_a + " ( " + sk_a.length + " bytes)");
+				plugin().start_receiver_instance("receiver_a", 256, public_params, sk_a);
+				log("Decrypting ciphertext");
+				var recovered = plugin().decrypt_b64("receiver_a", ciphertext, false);
+				log("Recovered text: " + recovered);
+
+				log("Starting receiver instance 'receiver_d'");
+				var sk_d = plugin().get_member_sk("test", "d");
+				plugin().start_receiver_instance("receiver_d", 256, public_params, sk_d);
+				var recovered_d = plugin().decrypt_b64("receiver_d", ciphertext, false);
+				log("Recovered text: " + recovered_d);
+				
+
+				
+			} else {
+				alert("Not valid :(");
+			}
+		}
+
+	</script>
+</head>
+<body>
+	<div class="container">
+	  <div class="row">
+	    <div id="log" style="word-wrap: break-word;" class="span6"></div>
+	    <div id="sk_log" style="word-wrap: break-word;" class="span6"></div>
+	  </div>
+	</div>
+	<object id="plugin0" type="application/x-broadmask" width="300" height="300">
+		<param name="onload" value="pluginLoaded" />
+	</object><br />
+</body>
+</html>
+
+
+
