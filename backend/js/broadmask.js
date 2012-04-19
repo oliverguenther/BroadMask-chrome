@@ -1,7 +1,8 @@
 function Broadmask() {
 
 	// Setup API handlers
-	this.imgHost = new Broadmask_Picasa(this, chrome.extension.getBackgroundPage().oauth);
+	this.imgHost = new Broadmask_Picasa();
+	this.osn = new Broadmask_Facebook();
 
 	// Handler for NPAPI module
 	this.module = null;

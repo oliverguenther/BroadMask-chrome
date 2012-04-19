@@ -1,6 +1,3 @@
-var bg = chrome.extension.getBackgroundPage();
-var broadmask = bg.broadmask;
-
 function error(msg) {
 	$("#errors").append("<p>" + msg + "</p>");
 	$("#errormsg").show();

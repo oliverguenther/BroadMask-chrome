@@ -1,32 +1,93 @@
-function Broadmask_facebook(d, id) {
+function Broadmask_facebook() {
 	"use strict";
-	this.broadmask = chrome.extension.getBackgroundPage().broadmask;
-	this.d = d;
-	this.images = null;
-	this.root = d.getElementById(id);
+	this.bg = chrome.extension.getBackgroundPage();
+	this.broadmask = this.bg.broadmask;
 
-	var sharef = this.share.bind(this),
-	that = this;
-	$(document).ready(function () {
-		$('#share-submit-btn').click(sharef);
-		$('#share-reset-btn').click(function () {
-			$(".uploadprogress").remove();
-			$("#share-select").attr("disabled", "disabled");
-			$("#share-submit-btn").attr("disabled", "disabled");
-			$("#share-reset-btn").attr("disabled", "disabled");
-		});
-	});
+	// Facebook API details
+	this.app_id = "281109321931593";
 
-	// fetch friends
+	// update cache
 	this.checkCache();
 
+	/**
+	* Retrieve a response a signed Facebook Graph API request.
+	* */
+	this.getFBData = function (url, callback) {
+		$.getJSON(url, {access_token : localStorage.fbtoken}, function (response) {
+			if (typeof response === 'object') {
+				callback(response);
+			} else {
+				console.log("Signed data request to " + url + " : unexpected response '" + response + "'");
+			}
+		});
+	};
+
+	/** 
+	* Post a signed request to the Facebook Graph API
+	*
+	*/
+	this.sendFBData = function (url, data, callback) {
+		var token = localStorage.fbtoken;
+		if (typeof token !== "undefined") {
+			data.access_token = token;
+			$.post(url, data, callback);
+		}
+	};
+
+}
+
+Broadmask_facebook.prototype.is_token_valid = function (callback) {
+	"use strict";
+	this.getFBData("https://graph.facebook.com/oauth/access_token_info?client_id=" + this.app_id, function (tokeninfo) {
+		if (tokeninfo.hasOwnProperty("expires_in") && tokeninfo.expires_in > 1200) {
+			callback(true);
+		} else {
+			callback(false);
+		}
+	});
+};
+
+Broadmask_facebook.prototype.authorize = function (callback) {
+	"use strict";
+
+	var that = this;
+
+	var requestToken = function () {
+		delete localStorage.fbtoken;
+		chrome.tabs.getCurrent(function (tab) {
+			chrome.tabs.onUpdated.addListener(function () {
+				chrome.extension.getBackgroundPage().onFacebookLogin(callback, tab);
+			});
+			chrome.tabs.create({'url': "https://www.facebook.com/dialog/oauth?client_id=" + that.app_id + "&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token&scope=publish_stream,create_note,read_friendlists"},
+				null);
+		});
+	};
+
+	var token = localStorage.fbtoken;
+	if (!token) {
+		requestToken();
+	}
+
+	this.is_token_valid(function (isvalid) {
+		if (isvalid !== true) {
+			requestToken();
+		}
+	});
+};
+
+/**
+* Remove the current token, if it exists
+*/
+function fbRevokeAuth(callback) {
+	delete localStorage.fbtoken;
+	callback();
 }
 
 Broadmask_facebook.prototype.cache = function () {
 	"use strict";
-	if (localStorage.facebook_cache) {
-		var cache = JSON.parse(localStorage.facebook_cache);
-		return cache;
+	var cache = this.bg.get('facebook_cache');
+	if (cache) {
+		return JSON.parse(cache);
 	}
 	return {};
 };
@@ -42,8 +103,9 @@ Broadmask_facebook.prototype.userid2name = function (userid) {
 
 Broadmask_facebook.prototype.receiversFromID = function (friendlistID) {
 	"use strict";
-	if (localStorage[friendlistID]) {
-		var friendlist = JSON.parse(localStorage[friendlistID]),
+	var cache = this.cache();
+	if (cache.friendlists) {
+		var friendlist = JSON.parse(cache.friendlists[friendlistID]),
 		members = [];
 		$.each(friendlist, function () {
 			members.push(this.id);
@@ -76,7 +138,7 @@ Broadmask_facebook.prototype.share = function () {
 			toupload.push(url);
 			if (toupload.length === thumbs.length) {
 				var message = that.armorData(toupload);
-				shareOnWall(message, [selected], function () {
+				that.shareOnWall(message, [selected], function () {
 					$("#status").append("Upload completed");
 				});
 			}
@@ -84,29 +146,59 @@ Broadmask_facebook.prototype.share = function () {
 	});
 };
 
-/*
-* Show the sharing pane when called
-* @param thumbClassname the classname of images to handle
-* will scan for 'rel'-attribute for uploaded url
+/** 
+* share an upload on the logged in user's Facebook wall
+* @param message the message to send (if multiple images, include them here!)
+* @param link if one image uploaded, link it here!
+* @param allowed_users an array of allowed user ids or friendlist ids
+* @param callback Called when returned from upload
 */
-Broadmask_facebook.prototype.enableSharing = function (thumbClassname) {
+Broadmask_facebook.prototype.shareOnWall = function (message, allowed_users, callback) {
 	"use strict";
-	if (thumbClassname) {
-		this.images = thumbClassname;
-		$("#share-select").removeAttr("disabled").empty();
-		$("#share-submit-btn").removeAttr("disabled");
-		$("#share-reset-btn").removeAttr("disabled");
-		this.checkCache();
-	}
+	// Post to Facebook wall using privacy set to this friendlistid
+	var data = {},
+	privacy = {value: 'CUSTOM', friends: 'SOME_FRIENDS', allow: allowed_users.join(",")};
+	data.message = message;
+	data.privacy = JSON.stringify(privacy);
+	sendFBData("https://graph.facebook.com/me/feed", data, callback);
 };
 
+/** 
+* share multiple messages on the logged in user's Facebook wall
+* @param messages the message to send (object)
+* @param callback Called when returned from upload
+*/
+Broadmask_facebook.prototype.shareBatch = function (messages, callback) {
+	"use strict";
+	var token = localStorage.fbtoken,
+	max_batchsize = 50,
+	count = 0,
+	timer = function (delay, subset) {
+		setTimeout(function () {
+			$.post("https://graph.facebook.com/?batch=" + encodeURIComponent(JSON.stringify(subset)), {"access_token" : token}, function () {
+				count += subset.length;
+				if (count === messages.length) {
+					callback();
+				}
+			});
+		}, 1000 * delay);
+	};
+	if (typeof token !== "undefined") {
+		for (var i = 0, slicelen = (messages.length / max_batchsize); i <= slicelen; i++) {
+			var subset = messages.slice(i*max_batchsize, (i+1)*max_batchsize);
+			if (subset.length > 0) {
+				timer(i, subset);
+			}
+		}
+	}
+}
 
 Broadmask_facebook.prototype.updateFriendlists = function (callback) {
 	"use strict";
 
 	var fetchFriendlistMembers = function (friendlist, callback) {
 		var members = [];
-		getFBData("https://graph.facebook.com/" + friendlist.id + "/members", function (response) {
+		this.getFBData("https://graph.facebook.com/" + friendlist.id + "/members", function (response) {
 			$.each(response.data, function (i, user) {
 				members.push(user.id);
 			});
@@ -116,14 +208,14 @@ Broadmask_facebook.prototype.updateFriendlists = function (callback) {
 
 	var fetchFriendlists = function (friendlists, callback) {
 		var completed = 0,
-			cached_friendlists = [];
+		cached_friendlists = [];
 		if (friendlists.length === 0) {
 			callback();
 		}
 		for(var i = 0, len = friendlists.length; i < len; i++) {
 			fetchFriendlistMembers(friendlists[i], function(friendlist, members) {
 				if (Array.isArray(members) && members.length > 0) {
-					cached_friendlists.push({'id': friendlist.id, 'name': friendlist.name, 'members': members});
+					cached_friendlists[friendlists[i]] = {'id': friendlist.id, 'name': friendlist.name, 'members': members};
 				}
 				completed++;
 				if(completed === friendlists.length) {
@@ -133,7 +225,7 @@ Broadmask_facebook.prototype.updateFriendlists = function (callback) {
 		}
 	};
 
-	getFBData("https://graph.facebook.com/me/friendlists", function (friendlists) {
+	this.getFBData("https://graph.facebook.com/me/friendlists", function (friendlists) {
 		var arr = [];
 		$.each(friendlists.data, function () {
 			arr.push(this);
@@ -143,7 +235,7 @@ Broadmask_facebook.prototype.updateFriendlists = function (callback) {
 };
 
 Broadmask_facebook.prototype.updateFriends = function (callback) {
-	getFBData("https://graph.facebook.com/me/friends", function (friends) {
+	this.getFBData("https://graph.facebook.com/me/friends", function (friends) {
 		var arr = [];
 		$.each(friends.data, function () {
 			arr.push(this.id);
@@ -201,9 +293,20 @@ Broadmask_facebook.prototype.checkCache = function () {
 		return false;
 	};
 
-	// check localstorage first
 	if (!update()) {
-		// Re-Fetch all Friendlists and update whenever it returns
-		this.updateCache(update);
+		// update the cache
+		delete localStorage.facebook_cache;
+		var cache = {},
+		that = this;
+		cache.expires = new Date().getTime() + 172800; // Expires in 2 days
+
+		that.updateFriends(function (friendsArr) {
+			cache.friends = friendsArr;
+			that.updateFriendlists(function (friendlistsArr) {
+				cache.friendlists = friendlistsArr;
+				localStorage.facebook_cache = JSON.stringify(cache);
+				callback();
+			});
+		});
 	}
 };

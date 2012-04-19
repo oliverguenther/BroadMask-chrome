@@ -36,14 +36,15 @@
 			$(document).ready(function () {
 				if (localStorage.cached_users) {
 					var users = JSON.parse(localStorage.cached_users),
-					users_typeahead = [];
+						friends = JSON.parse(localStorage.facebook_cache).friends,
+						users_typeahead = [];
 
 					print_users(users);
 					$.each(users, function () {
 						users_typeahead.push(this.name);
 					});
 					$("#instance_name").typeahead({
-						"source": users_typeahead,
+						"source": friends,
 						"items": 5,
 					});
 

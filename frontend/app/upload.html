@@ -9,18 +9,98 @@
 		<script src="../js/jquery.watch.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../js/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../js/app.js" type="text/javascript" charset="utf-8"></script>
-		<!-- Picasa frontend script -->
-		<script src="../js/api/broadmask.picasa.js" type="text/javascript" charset="utf-8"></script>
-		<!-- Facebook background script -->
-		<script src="/backend/js/api/broadmask.facebook.js" type="text/javascript" charset="utf-8"></script>
-		<script src="../js/api/broadmask.facebook.js" type="text/javascript" charset="utf-8"></script>
 
 		<script type="text/javascript" charset="utf-8">
 			var bg = chrome.extension.getBackgroundPage();
-			var broadmask = bg.broadmask;
+			var bm = bg.broadmask;
+			var imgid = 0;
+
+
+			/*
+			* Handle user files, and upload them to the image hoster
+			* @param files an array of files
+			*/
+			function handleFiles (files) {
+				"use strict";
+				var that = this,
+				i,
+				f,
+				len = files.length,
+				reader,
+				initRead;
+
+				initRead = function (theFile) {
+					return function (e) {
+						var thumb = [];
+						thumb.push('<div id="');
+						thumb.push(imgid);
+						thumb.push('" class="uploadprogress"><div class="picasa-thumbwrapper"><img class="thumb" src="');
+						thumb.push(e.target.result);
+						thumb.push('" title="');
+						thumb.push(theFile.name);
+						thumb.push('"/></div></div>');
+						$("#files-preview").append(thumb.join(''));
+						imgid++;
+					};
+				};
+				// Loop through the FileList and render image files as thumbnails.
+				for (i = 0; i < len; i = i + 1) {
+					f = files[i];
+					reader = new FileReader();
+					// Only process image files.
+					if (f.type.match('image.*')) {
+						reader.onload = initRead(f);
+						reader.readAsDataURL(f);
+					}
+				}
+			};
+
+			/** Event handler for HTML5 file inputs */
+			function fileInputs (evt) {
+				evt.stopPropagation();
+				evt.preventDefault();
+
+				if (evt.type === 'dragover') {
+					evt.dataTransfer.dropEffect = 'copy';
+					return;
+				}
+				var files = evt.target.files || evt.dataTransfer.files;
+				if (files !== undefined) {
+					handleFiles(files);
+				}
+			};
+
+
 			$(document).ready(function() {
-				var osn = new Broadmask_facebook(document, "facebook");
-				var uploader = new Broadmask_Uploader(document, "picasa", broadmask.imgHost, osn);
+
+
+
+				$('#share-submit-btn').click(function () {
+					$("#share-select").removeAttr("disabled").empty();
+					$("#share-submit-btn").removeAttr("disabled");
+					$("#share-reset-btn").removeAttr("disabled");
+					return false;
+				});
+
+				$('#share-reset-btn').click(function () {
+					$(".uploadprogress").remove();
+					$("#share-select").attr("disabled", "disabled");
+					$("#share-submit-btn").attr("disabled", "disabled");
+					$("#share-reset-btn").attr("disabled", "disabled");
+					return false;
+				});
+
+				if (localStorage.cached_instances) {
+					$("#create_users_note").hide();
+					/** setup event listeners */
+					var dropbox = document.getElementById("files-dropzone"),
+					filepicker = document.getElementById("files-picker");
+					dropbox.addEventListener('dragover', fileInputs, false);
+					dropbox.addEventListener('drop', fileInputs, false);
+					filepicker.addEventListener('change', fileInputs, false);
+				} else {
+					$("#share-form :input").attr("disabled", true);
+				}
 			});
 		</script>
 
@@ -61,12 +141,17 @@
 						<div class="page-header">
 							<h3>Upload photos <small> Share new photos with your group</small></h3>
 						</div>	
+						<div id="create_users_note" class="alert alert-block alert-error">
+							<h4 class="alert-heading">No communication groups found</h4>
+							<p>
+							No group instances have been defined. <a href="instances.html">Create a new instance</a>
+							</p>
+						</div>
 						<div id="picasa">
-							<div class="filepicker"><input id="files-picker" type="file" multiple=""></div>
-							<div id="files-dropzone" class="dropzone">or drop some files here!</div>
-							<div id="files-preview"></div>
-							<hr>
 							<form id="share-form" class="form-horizontal">
+								<div class="filepicker"><input id="files-picker" type="file" multiple=""></div>
+								<div id="files-dropzone" class="dropzone">or drop some files here!</div>
+								<hr>
 								<div class="control-group">
 									<label class="control-label" for="share-select">Share with</label>
 									<div class="controls">
@@ -76,10 +161,11 @@
 								</div>
 								<div id="sharestatus"></div>
 								<div class="form-actions">
-									<a id="share-submit-btn" class="btn btn-success" disabled><i class="icon-white icon-arrow-up"></i> Share content</a>
-									<a id="share-reset-btn"class="btn" disabled>Delete batch</a>
+									<button id="share-submit-btn" class="btn btn-success" disabled><i class="icon-white icon-arrow-up"></i> Share content</button>
+									<button id="share-reset-btn"class="btn" disabled>Delete batch</button>
 								</div>
 							</form>
+							<div id="files-preview"></div>
 						</div>
 					</div>
 				</div>

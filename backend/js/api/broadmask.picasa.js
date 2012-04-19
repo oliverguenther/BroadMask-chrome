@@ -1,7 +1,17 @@
-function Broadmask_Picasa(broadmask, oauth) {
+function Broadmask_Picasa() {
 	"use strict";
-	this.oauth = oauth;
-	this.broadmask = broadmask;
+	this.oauth = ChromeExOAuth.initBackgroundPage({
+		'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
+		'authorize_url': 'https://www.google.com/accounts/OAuthAuthorizeToken',
+		'access_url': 'https://www.google.com/accounts/OAuthGetAccessToken',
+		'consumer_key': 'anonymous',
+		'consumer_secret': 'anonymous',
+		'scope': 'https://picasaweb.google.com/data',
+		'app_name': 'BroadMask'
+	});
+	
+	this.bg = chrome.extension.getBackgroundPage();
+	this.broadmask = this.bg.broadmask;
 	// Request storage with a max of 10mb
 	this.storage = new PermaFrost(10);
 

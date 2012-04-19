@@ -2,25 +2,17 @@
 	<head>
 		<!-- utils -->
 		<script src="/shared/jquery.min.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/util/chrome_ex_oauth.js" type="text/javascript" charset="utf-8"></script>
-		<script src="js/util/chrome_ex_oauth_simple.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/util/permafrost/permafrost.js" type="text/javascript" charset="utf-8"></script>
 		<!-- Broadmask NPAPI bridge -->
 		<script src="js/broadmask.js" type="text/javascript" charset="utf-8"></script>
+		<!-- Architecture implementation for picasa/facebook -->
 		<script src="js/api/broadmask.picasa.js" type="text/javascript" charset="utf-8"></script>
-		<script src="/frontend/js/api/broadmask.facebook.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/util/chrome_ex_oauth.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/util/chrome_ex_oauth_simple.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/api/broadmask.facebook.js" type="text/javascript" charset="utf-8"></script>
 
 		<script type="text/javascript" charset="utf-8">
 
-			var oauth = ChromeExOAuth.initBackgroundPage({
-				'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
-				'authorize_url': 'https://www.google.com/accounts/OAuthAuthorizeToken',
-				'access_url': 'https://www.google.com/accounts/OAuthGetAccessToken',
-				'consumer_key': 'anonymous',
-				'consumer_secret': 'anonymous',
-				'scope': 'https://picasaweb.google.com/data',
-				'app_name': 'BroadMask'
-			});
 
 			var broadmask = new Broadmask();
 
@@ -32,6 +24,14 @@
 				}
 				return size;
 			};
+
+			function store(key, obj) {
+				localStorage[key] = obj;
+			}
+
+			function get(key) {
+				return localStorage[key];
+			}
 
 			/** caches images for popup */
 			var unread = {}, 

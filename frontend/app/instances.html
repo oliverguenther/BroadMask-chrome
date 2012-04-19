@@ -35,15 +35,52 @@
 			}
 
 			$(document).ready(function () {
-				print_instances();
-				
+
 				if (localStorage.cached_users) {
+					$("#create_users_note").hide();
+					var users = JSON.parse(localStorage.cached_users),
+					users_typeahead = [];
+
+					$.each(users, function () {
+						users_typeahead.push(this.name);
+					});
+					$("#add_user").typeahead({
+						"source": users_typeahead,
+						"items": 5,
+					});
+
+					$('#btn_add_user').click(function () {
+						var add_user = $("#add_user").val(),
+						id = null;
+
+						$.each(users, function () {
+							if (this.name === add_user) {
+								id = this.id;
+								return;
+							}
+						});
+						if (add_user && id) {
+							$('#added_users').append('<div class="user_block">' + add_user + '<br/>' + id + '</div>');
+						}
+
+						return false;
+					});
 				} else {
 					$("#create_instance :input").attr("disabled", true);
-					$("#create_users_note").show();
 				}
 
-				$("#add_user").typeahead({});
+
+				$("#add_user").keyup(function(event){
+					if(event.keyCode == 13){
+						$("#btn_add_user").click();
+						$(this).val('');
+					}
+				});
+
+
+
+
+				print_instances();
 			});
 		</script>
 	</head>
@@ -123,13 +160,16 @@
 									<label class="control-label" for="add_user">Add user</label>
 									<div class="controls">
 										<div class="input-append">
-											<input class="span3" id="add_user" size="24" type="text"><button class="btn btn-inverse" type="button">Add</button>
+											<input class="span3" id="add_user" autocomplete="off" size="24" type="text"><button id="btn_add_user" class="btn btn-inverse" type="button">Add</button>
 										</div>
 										<p class="help-block light">
 										Enter the names of you're friends you wish to add to this scheme.<br/><strong>Note:</strong> If you select <em>Broadcast Encryption</em>, you can select the receivers each time your share new content!
 										</p>
 									</div>
 								</div>
+								<div id="added_users">
+								</div>
+								<div style="clear:both"></div>
 								<div class="form-actions">
 									<button type="submit" class="btn btn-success">Create instance</button>
 									<button class="btn">Reset</button>

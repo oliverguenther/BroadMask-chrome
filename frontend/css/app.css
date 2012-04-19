@@ -47,6 +47,13 @@ html,body { background: #E7E7E7 }
 	text-align: center !important;
 }
 
+/** instances */
+.user_block {
+	float: left;
+	padding: 10px;
+	border: 1px solid #999;
+}
+
 /** uploaders */
 
 #Picasa-Upload {
@@ -77,6 +84,7 @@ progress {
 
 .filepicker {
 	text-align: center;
+	margin-bottom: 20px;
 }
 
 .filechoose {
