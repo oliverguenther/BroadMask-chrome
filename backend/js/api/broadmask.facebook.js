@@ -1,4 +1,4 @@
-function Broadmask_facebook() {
+function Broadmask_Facebook() {
 	"use strict";
 	this.bg = chrome.extension.getBackgroundPage();
 	this.broadmask = this.bg.broadmask;
@@ -9,45 +9,90 @@ function Broadmask_facebook() {
 	// update cache
 	this.checkCache();
 
-	/**
-	* Retrieve a response a signed Facebook Graph API request.
-	* */
-	this.getFBData = function (url, callback) {
-		$.getJSON(url, {access_token : localStorage.fbtoken}, function (response) {
-			if (typeof response === 'object') {
-				callback(response);
-			} else {
-				console.log("Signed data request to " + url + " : unexpected response '" + response + "'");
-			}
-		});
-	};
 
-	/** 
-	* Post a signed request to the Facebook Graph API
-	*
-	*/
-	this.sendFBData = function (url, data, callback) {
-		var token = localStorage.fbtoken;
-		if (typeof token !== "undefined") {
-			data.access_token = token;
-			$.post(url, data, callback);
-		}
-	};
+
 
 }
 
-Broadmask_facebook.prototype.is_token_valid = function (callback) {
+/** 
+* Post a signed request to the Facebook Graph API
+*
+*/
+Broadmask_Facebook.prototype.sendFBData = function (url, data, callback) {
 	"use strict";
-	this.getFBData("https://graph.facebook.com/oauth/access_token_info?client_id=" + this.app_id, function (tokeninfo) {
+	var token = localStorage.fbtoken;
+	if (typeof token !== "undefined") {
+		data.access_token = token;
+		$.post(url, data, callback);
+		return true;
+	} else {
+		return false;
+	}
+};
+
+/**
+* Retrieve a response a signed Facebook Graph API request.
+* */
+Broadmask_Facebook.prototype.getFBData = function (url, successcb, errorcb) {
+	"use strict";
+	var token = localStorage.fbtoken;
+	if (typeof token !== "undefined") {
+		var jqxhr = $.getJSON(url, {access_token : localStorage.fbtoken}, function (response) {
+
+		})
+			.success(function (response) {
+				if (typeof response === 'object') {
+					successcb(response);
+				} else {
+					console.log("Signed data request to " + url + " : unexpected response '" + response + "'");
+				}
+			})
+			.fail(function (response) {
+				var error = response.status;
+				try {
+					error = JSON.parse(response.responseText);
+				} catch (e) { /* keep error */ }
+
+				if (typeof errorcb === 'function') {
+					errorcb(error);
+				}
+			});
+		return true;
+	} else {
+		return false;
+	}
+};
+
+
+Broadmask_Facebook.prototype.is_authorized = function (callback) {
+	"use strict";
+	var that = this;
+	var started = this.getFBData("https://graph.facebook.com/oauth/access_token_info?client_id=" + this.app_id, function (tokeninfo) {
 		if (tokeninfo.hasOwnProperty("expires_in") && tokeninfo.expires_in > 1200) {
 			callback(true);
 		} else {
 			callback(false);
 		}
+	}, function (errormsg) {
+		if (typeof errormsg === 'object' && errormsg.error) {
+			// Reauth automatically
+			if (errormsg.error.code === 190 && localStorage.fbauthorized) {
+				that.authorize(function () {
+					callback(true);
+				});
+			}
+		} else {
+			console.warn("Authorization check failed. Error was " + JSON.stringify(errormsg));
+			callback(false);
+		}
 	});
+	if (!started) {
+		console.warn("No token available");
+		callback(false);
+	}
 };
 
-Broadmask_facebook.prototype.authorize = function (callback) {
+Broadmask_Facebook.prototype.authorize = function (callback) {
 	"use strict";
 
 	var that = this;
@@ -56,7 +101,10 @@ Broadmask_facebook.prototype.authorize = function (callback) {
 		delete localStorage.fbtoken;
 		chrome.tabs.getCurrent(function (tab) {
 			chrome.tabs.onUpdated.addListener(function () {
-				chrome.extension.getBackgroundPage().onFacebookLogin(callback, tab);
+				chrome.extension.getBackgroundPage().onFacebookLogin(function () {
+					that.checkCache();
+					callback();
+				}, tab);
 			});
 			chrome.tabs.create({'url': "https://www.facebook.com/dialog/oauth?client_id=" + that.app_id + "&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token&scope=publish_stream,create_note,read_friendlists"},
 				null);
@@ -68,7 +116,7 @@ Broadmask_facebook.prototype.authorize = function (callback) {
 		requestToken();
 	}
 
-	this.is_token_valid(function (isvalid) {
+	this.is_authorized(function (isvalid) {
 		if (isvalid !== true) {
 			requestToken();
 		}
@@ -78,12 +126,12 @@ Broadmask_facebook.prototype.authorize = function (callback) {
 /**
 * Remove the current token, if it exists
 */
-function fbRevokeAuth(callback) {
+Broadmask_Facebook.prototype.revokeAuth = function () {
+	"use strict";
 	delete localStorage.fbtoken;
-	callback();
 }
 
-Broadmask_facebook.prototype.cache = function () {
+Broadmask_Facebook.prototype.cache = function () {
 	"use strict";
 	var cache = this.bg.get('facebook_cache');
 	if (cache) {
@@ -92,7 +140,7 @@ Broadmask_facebook.prototype.cache = function () {
 	return {};
 };
 
-Broadmask_facebook.prototype.userid2name = function (userid) {
+Broadmask_Facebook.prototype.userid2name = function (userid) {
 	"use strict";
 	var cache = this.cache();
 	if (cache && cache.friends[userid]) {
@@ -101,7 +149,7 @@ Broadmask_facebook.prototype.userid2name = function (userid) {
 	return userid;
 };
 
-Broadmask_facebook.prototype.receiversFromID = function (friendlistID) {
+Broadmask_Facebook.prototype.receiversFromID = function (friendlistID) {
 	"use strict";
 	var cache = this.cache();
 	if (cache.friendlists) {
@@ -115,7 +163,7 @@ Broadmask_facebook.prototype.receiversFromID = function (friendlistID) {
 	return null;
 };
 
-Broadmask_facebook.prototype.armorData = function (dataArr) {
+Broadmask_Facebook.prototype.armorData = function (dataArr) {
 	"use strict";
 	// TODO replace with GPG signature
 	var i, len;
@@ -125,7 +173,7 @@ Broadmask_facebook.prototype.armorData = function (dataArr) {
 
 };
 
-Broadmask_facebook.prototype.share = function () {
+Broadmask_Facebook.prototype.share = function () {
 	"use strict";
 	var thumbs = document.getElementsByClassName(this.images),
 	selected = $("#share-select").val(),
@@ -153,7 +201,7 @@ Broadmask_facebook.prototype.share = function () {
 * @param allowed_users an array of allowed user ids or friendlist ids
 * @param callback Called when returned from upload
 */
-Broadmask_facebook.prototype.shareOnWall = function (message, allowed_users, callback) {
+Broadmask_Facebook.prototype.shareOnWall = function (message, allowed_users, callback) {
 	"use strict";
 	// Post to Facebook wall using privacy set to this friendlistid
 	var data = {},
@@ -168,7 +216,7 @@ Broadmask_facebook.prototype.shareOnWall = function (message, allowed_users, cal
 * @param messages the message to send (object)
 * @param callback Called when returned from upload
 */
-Broadmask_facebook.prototype.shareBatch = function (messages, callback) {
+Broadmask_Facebook.prototype.shareBatch = function (messages, callback) {
 	"use strict";
 	var token = localStorage.fbtoken,
 	max_batchsize = 50,
@@ -193,12 +241,13 @@ Broadmask_facebook.prototype.shareBatch = function (messages, callback) {
 	}
 }
 
-Broadmask_facebook.prototype.updateFriendlists = function (callback) {
+Broadmask_Facebook.prototype.updateFriendlists = function (callback) {
 	"use strict";
+	var that = this;
 
 	var fetchFriendlistMembers = function (friendlist, callback) {
 		var members = [];
-		this.getFBData("https://graph.facebook.com/" + friendlist.id + "/members", function (response) {
+		that.getFBData("https://graph.facebook.com/" + friendlist.id + "/members", function (response) {
 			$.each(response.data, function (i, user) {
 				members.push(user.id);
 			});
@@ -208,14 +257,14 @@ Broadmask_facebook.prototype.updateFriendlists = function (callback) {
 
 	var fetchFriendlists = function (friendlists, callback) {
 		var completed = 0,
-		cached_friendlists = [];
+		cached_friendlists = {};
 		if (friendlists.length === 0) {
 			callback();
 		}
 		for(var i = 0, len = friendlists.length; i < len; i++) {
 			fetchFriendlistMembers(friendlists[i], function(friendlist, members) {
 				if (Array.isArray(members) && members.length > 0) {
-					cached_friendlists[friendlists[i]] = {'id': friendlist.id, 'name': friendlist.name, 'members': members};
+					cached_friendlists[friendlist.id] = {'id': friendlist.id, 'name': friendlist.name, 'members': members};
 				}
 				completed++;
 				if(completed === friendlists.length) {
@@ -234,18 +283,18 @@ Broadmask_facebook.prototype.updateFriendlists = function (callback) {
 	});
 };
 
-Broadmask_facebook.prototype.updateFriends = function (callback) {
+Broadmask_Facebook.prototype.updateFriends = function (callback) {
 	this.getFBData("https://graph.facebook.com/me/friends", function (friends) {
-		var arr = [];
+		var arr = {};
 		$.each(friends.data, function () {
-			arr.push(this.id);
+			arr[this.id] = this.name;
 		});
 		callback(arr);
 	});
 };
 
 
-Broadmask_facebook.prototype.updateCache = function (callback) {
+Broadmask_Facebook.prototype.updateCache = function (callback) {
 	"use strict";
 
 	delete localStorage.facebook_cache;
@@ -270,7 +319,7 @@ Broadmask_facebook.prototype.updateCache = function (callback) {
 * Tries to read cached data from localStorage first
 * @param select The select element to output to
 */
-Broadmask_facebook.prototype.checkCache = function () {
+Broadmask_Facebook.prototype.checkCache = function (callback) {
 	"use strict";
 	// strip select from all existing options
 	$(this.shareWith).empty();
@@ -280,15 +329,7 @@ Broadmask_facebook.prototype.checkCache = function () {
 	update = function () {
 		var cache = that.cache();
 		if (cache.friendlists && cache.friends && (now < cache.expires)) {
-			var options = [];
-
-			$.each(cache.friendlists, function () {
-				options.push('<option value="' + this.id + '">' + this.name + '</option>');
-			});
-			if (options.length > 0) {
-				$("#share-select").append(options.join(''));
-				return true;
-			}
+			return true;
 		}
 		return false;
 	};
@@ -296,17 +337,28 @@ Broadmask_facebook.prototype.checkCache = function () {
 	if (!update()) {
 		// update the cache
 		delete localStorage.facebook_cache;
-		var cache = {},
-		that = this;
-		cache.expires = new Date().getTime() + 172800; // Expires in 2 days
 
-		that.updateFriends(function (friendsArr) {
-			cache.friends = friendsArr;
-			that.updateFriendlists(function (friendlistsArr) {
-				cache.friendlists = friendlistsArr;
-				localStorage.facebook_cache = JSON.stringify(cache);
-				callback();
-			});
+		// check for valid token
+		this.is_authorized(function (isvalid) {
+			if (!isvalid) {
+				if (typeof callback === "function") {
+					callback({error: "No token available"});
+				}
+			} else {
+				var cache = {};
+				cache.expires = new Date().getTime() + 172800; // Expires in 2 days
+
+				that.updateFriends(function (friendsArr) {
+					cache.friends = friendsArr;
+					that.updateFriendlists(function (friendlistsArr) {
+						cache.friendlists = friendlistsArr;
+						localStorage.facebook_cache = JSON.stringify(cache);
+						if (typeof callback === 'function') {
+							callback({success: true, message: 'Cache updated'});
+						}
+					});
+				});
+			}
 		});
 	}
 };

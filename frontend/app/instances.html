@@ -9,40 +9,59 @@
 		<script src="../js/jquery.watch.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../js/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../js/app.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" src="../js/sha256.js"></script>
+
 
 		<script type="text/javascript" charset="utf-8">
+			var bg = chrome.extension.getBackgroundPage(),
+			bm = bg.broadmask;
+
 			function print_instances() {
-				if (localStorage.cached_instances) {
-					var instances = JSON.parse(localStorage.cached_instances),
-					rows = [];
-					$.each(instances, function(i, instance) {
-						rows.push("<tr><td>");
-						rows.push(instance.id);
-						rows.push("</td><td>");
-						rows.push(instance.size);
-						rows.push("</td><td>");
-						$.each(instance.receivers, function(i, userid) {
-							var name = userid2name(userid);
-							rows.push(name);
-							if (i !== instance.receivers.length - 1) {
-								rows.push(", ");
-							}
-						});
-						rows.push("</td></tr>");
-					});
-					$("#instances").append('<table class="table table-bordered table-striped"><thead><tr><th>Instance</th><th>Size</th><th>Receivers</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
+				var instances = bm.module.get_stored_instances(),
+				rows = [];
+				$.each(instances, function(i, instance) {
+					rows.push("<tr><td>");
+					rows.push(instance.name);
+					rows.push('</td><td style="word-break: break-all">');
+					rows.push(instance.id);
+					rows.push("</td><td>");
+					rows.push(instance.type);
+					rows.push("</td><td>");
+					rows.push(instance.max_users);
+					rows.push('</td><td class="centered"><a href="javascript:instance_remove(\'');
+					rows.push(instance.id); 
+					rows.push('\')"><i class="icon-minus-sign"></i></a></td></tr>');
+				});
+				if (rows.length > 0) {
+					$("#instances").replaceWith('<table class="table table-bordered table-striped"><thead><tr><th>Instance</th><th>Id</th><th>Type</th><th>Size</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
+				}
+			}
+
+			function instance_remove(id) {
+				var instances = bm.module.get_stored_instances();
+				if (confirm("Do you REALLY want to delete the instance '" + instances[id].name + "' ?")) {
+					bm.module.remove_instance(String(id));
+					location.reload(true);
 				}
 			}
 
 			$(document).ready(function () {
+				var users = bm.module.gpg_associatedKeys(),
+				friends = cached_friends();
 
-				if (localStorage.cached_users) {
+				if (Object.size(users) > 0) {
 					$("#create_users_note").hide();
-					var users = JSON.parse(localStorage.cached_users),
-					users_typeahead = [];
+					var users_typeahead = [],
+					user_ids = {};
 
-					$.each(users, function () {
-						users_typeahead.push(this.name);
+					$.each(users, function (id, key) {
+						var name = id;
+						if (friends[id]) {
+							name = friends[id];
+							user_ids[name] = id;
+						}
+						users_typeahead.push(name);
+
 					});
 					$("#add_user").typeahead({
 						"source": users_typeahead,
@@ -51,20 +70,44 @@
 
 					$('#btn_add_user').click(function () {
 						var add_user = $("#add_user").val(),
-						id = null;
+						id = user_ids[add_user];
 
-						$.each(users, function () {
-							if (this.name === add_user) {
-								id = this.id;
-								return;
-							}
-						});
 						if (add_user && id) {
-							$('#added_users').append('<div class="user_block">' + add_user + '<br/>' + id + '</div>');
+							$('#added_users').append('<div class="user_block" data-id="' + id +'" >' + add_user + '<br/>' + id + '</div>');
 						}
 
 						return false;
 					});
+
+					$("#btn_create_instance").click(function () {
+						var cached_instances, 
+						inst = {}
+						users = [],
+						maxusers = 0;
+						inst.name = $("#instance_name").val();
+						inst.type = $("#instance_type").val();
+						$("#create_instance_success").hide();
+						$(".user_block").each(function () {
+							users.push($(this).attr('data-id'));
+							// set max users to > 2*users
+							maxusers += 2;
+						});
+						inst.users = users;
+						var i = 3, pow = 0;
+						while (pow <= maxusers) {
+							pow = Math.pow(2, i++);
+						}
+						inst.max_size = pow;
+						inst.id = Crypto.SHA256(inst.name + users.join("") + inst.type);
+
+						if (inst.type === "bes") {
+							var params = bm.module.create_sender_instance(inst.id, inst.name, pow); 
+							console.log(params);
+						}
+						$("#create_instance_success").show();
+						print_instances();
+					});
+
 				} else {
 					$("#create_instance :input").attr("disabled", true);
 				}
@@ -123,6 +166,9 @@
 						<div id="instances">
 						</div>
 						<div>
+							<div style="display:none" id="create_instance_success" class="alert alert-success">
+								The instance has been created.
+							</div>
 							<div id="create_users_note" class="alert alert-block alert-error">
 								<h4 class="alert-heading">No user keys available!</h4>
 								<p>
@@ -171,8 +217,8 @@
 								</div>
 								<div style="clear:both"></div>
 								<div class="form-actions">
-									<button type="submit" class="btn btn-success">Create instance</button>
-									<button class="btn">Reset</button>
+									<button id="btn_create_instance" type="submit" class="btn btn-success">Create instance</button>
+									<button id="btn_reset_form" class="btn">Reset</button>
 								</div>
 							</form>
 						</div>

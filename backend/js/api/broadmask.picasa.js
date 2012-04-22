@@ -181,11 +181,14 @@ Broadmask_Picasa.prototype.handleResponse = function (xhr) {
 
 };
 
-Broadmask_Picasa.prototype.performAuth = function (callback) {
+Broadmask_Picasa.prototype.authorize = function (callback) {
 	this.oauth.authorize(callback);
 };
 
-Broadmask_Picasa.prototype.revokeAuth = function (callback) {
+Broadmask_Picasa.prototype.revokeAuth = function () {
 	this.oauth.clearTokens();
-	callback();
+};
+
+Broadmask_Picasa.prototype.is_authorized = function (callback) {
+	callback(this.oauth.hasToken());
 };

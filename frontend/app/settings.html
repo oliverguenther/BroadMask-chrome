@@ -9,55 +9,63 @@
 		<script src="../js/jquery.watch.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../js/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../js/app.js" type="text/javascript" charset="utf-8"></script>
-		<script src="../js/api/broadmask.facebook.js" type="text/javascript" charset="utf-8"></script>
-		
+
 
 		<script type="text/javascript" charset="utf-8">
 			var bg = chrome.extension.getBackgroundPage();
 			var broadmask = bg.broadmask;
 
-			$(document).ready(function () {
-				/** Update settings buttons */
-				if (chrome.extension.getBackgroundPage().oauth.hasToken()) {
-					$('#picasaauthbtn').val('Revoke Authorization');
-					$('#picasaauthbtn').removeClass('btn-success').addClass('btn-danger');
-					$('.picasaauth-toggle').show();
-				}
-
-				if (localStorage.fbtoken) {
-					$('#facebookloginbtn').val('Revoke Authorization');
-					$('#facebookloginbtn').removeClass('btn-success').addClass('btn-danger');	
-					$('.facebookauth-toggle').show();
-				}
-
-				$('#picasaauthbtn').click(function (btn) {
-					"use strict";
-					var btn = this;
-					if ($(btn).val() === 'Authorize') {
-						broadmask.imgHost.performAuth(function () {
-							$(btn).val('Revoke Authorization');
-							$(btn).removeClass('btn-success').addClass('btn-danger');
-						});
+			function check_host_auth() {
+				$('#picasaauthbtn').val('loading');
+				broadmask.imgHost.is_authorized(function (auth_success) {
+					if (auth_success === true) {
+						$('#picasaauthbtn').val('Revoke Authorization')
+						.removeClass('btn-success').addClass('btn-danger').attr("data-action", "logout");
+						$('.picasaauth-toggle').show();
 					} else {
-						broadmask.imgHost.revokeAuth(function () {
-							$(btn).val('Authorize');
-							$(btn).removeClass('btn-danger').addClass('btn-success');
-						});
+						$('#picasaauthbtn').val('Authorize').attr("data-action", "login");
 					}
 				});
-				$('#facebookloginbtn').click(function (btn) {
-					"use strict";
-					var btn = this;
-					if ($(btn).val() === 'Authorize') {
-						fbAuth(function () {
-							$(btn).val('Revoke Authorization');
-							$(btn).removeClass('btn-success').addClass('btn-danger');
-						});
+			}
+
+			function check_osn_auth() {
+				$('#facebookloginbtn').val('loading');
+				broadmask.osn.is_authorized(function (auth_success) {
+					if (auth_success === true) {
+						$('#facebookloginbtn').val('Revoke Authorization')
+						.removeClass('btn-success').addClass('btn-danger').attr("data-action", "logout");	
+						$('.facebookauth-toggle').show();
+						localStorage.fbauthorized = true;
 					} else {
-						fbRevokeAuth(function () {
-							$(btn).val('Authorize');
-							$(btn).removeClass('btn-danger').addClass('btn-success');
-						});
+						$('#facebookloginbtn').val('Authorize').attr("data-action", "login");
+						localStorage.fbauthorized = false;
+					}
+				});
+			}
+
+			$(document).ready(function () {
+				check_host_auth();
+				check_osn_auth();
+
+				$('#picasaauthbtn').click(function () {
+					"use strict";
+					if ($(this).attr("data-action") === "logout") {
+						broadmask.imgHost.revokeAuth();
+						$(this).val('Authorize');
+						$(this).removeClass('btn-danger').addClass('btn-success').attr("data-action", "login");
+					} else {
+						broadmask.imgHost.authorize(check_host_auth);
+					}
+				});
+
+				$('#facebookloginbtn').click(function () {
+					"use strict";
+					if ($(this).attr("data-action") === "logout") {
+						broadmask.osn.revokeAuth();
+						$(this).val('Authorize');
+						$(this).removeClass('btn-danger').addClass('btn-success').attr("data-action", "login");
+					} else {
+						broadmask.osn.authorize(check_osn_auth);
 					}
 				});
 			});
@@ -109,7 +117,7 @@
 								<p class="picasaauth-toggle" style="display:none">
 								Your picasa account has been linked and is available for Broadmask.
 								</p>
-								<input type="button" id="picasaauthbtn" class="btn btn-small btn-primary" value="Authorize">
+								<input type="button" id="picasaauthbtn" class="btn btn-small btn-success" value="Authorize" data-loading-text="authorizing">
 								<hr>
 								<h4>Facebook Authorization</h4>
 								<p>
@@ -118,7 +126,7 @@
 								<p class="facebookauth-toggle" style="display:none">
 								Your facebook account has been linked and Broadmask has been authorized.
 								</p>
-								<input type="button" id="facebookloginbtn" class="btn btn-small btn-primary" value="Authorize">
+								<input type="button" id="facebookloginbtn" class="btn btn-small btn-success" value="Authorize" data-loading-text="authorizing">
 							</div>
 						</div>	
 

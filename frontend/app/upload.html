@@ -16,6 +16,20 @@
 			var imgid = 0;
 
 
+			function enableShareForm(enable) {
+				if (enable === true) {
+					$("#share-select").removeAttr("disabled");
+					$("#share-submit-btn").removeAttr("disabled");
+					$("#share-reset-btn").removeAttr("disabled");
+				} else {
+					$(".uploadprogress").remove();
+					$("#share-select").attr("disabled", "disabled");
+					$("#share-submit-btn").attr("disabled", "disabled");
+					$("#share-reset-btn").attr("disabled", "disabled");
+				}
+			}
+
+
 			/*
 			* Handle user files, and upload them to the image hoster
 			* @param files an array of files
@@ -50,9 +64,16 @@
 					// Only process image files.
 					if (f.type.match('image.*')) {
 						reader.onload = initRead(f);
+						reader.onloadend = function () {
+							if ($(".uploadprogress").length > 0) {
+								enableShareForm(true);
+							}
+						};
 						reader.readAsDataURL(f);
 					}
 				}
+
+
 			};
 
 			/** Event handler for HTML5 file inputs */
@@ -76,22 +97,30 @@
 
 
 				$('#share-submit-btn').click(function () {
-					$("#share-select").removeAttr("disabled").empty();
-					$("#share-submit-btn").removeAttr("disabled");
-					$("#share-reset-btn").removeAttr("disabled");
+					enableShareForm(true);
 					return false;
 				});
 
 				$('#share-reset-btn').click(function () {
-					$(".uploadprogress").remove();
-					$("#share-select").attr("disabled", "disabled");
-					$("#share-submit-btn").attr("disabled", "disabled");
-					$("#share-reset-btn").attr("disabled", "disabled");
+					enableShareForm(false);
 					return false;
 				});
 
 				if (localStorage.cached_instances) {
 					$("#create_users_note").hide();
+
+					/** Fill instances select */
+					var cached_instances = JSON.parse(localStorage.cached_instances),
+						options = [];
+					$.each(cached_instances, function (i, instance) {
+						options.push("<option value=\"");
+						options.push(instance.id);
+						options.push("\">");
+						options.push(instance.name);
+						options.push("</option>");
+					});
+					$("#share-select").append(options.join(""));
+
 					/** setup event listeners */
 					var dropbox = document.getElementById("files-dropzone"),
 					filepicker = document.getElementById("files-picker");

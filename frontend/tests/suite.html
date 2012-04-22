@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <head>
-	<link rel="stylesheet" href="css/bootstrap.css" type="text/css" charset="utf-8"/>
-	<link rel="stylesheet" href="css/base.css" type="text/css" charset="utf-8"/>
-	<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+	<link rel="stylesheet" href="../css/bootstrap.css" type="text/css" charset="utf-8"/>
+	<script src="../../shared/jquery.min.js" type="text/javascript" charset="utf-8"></script>
 	<script type="text/javascript" charset="utf-8">
 		function plugin0()
 		{
@@ -21,7 +20,7 @@
 		function pluginLoaded() {
 			if (plugin().valid === true) {
 				log("starting sending instance 'test'");
-				var public_params = plugin().start_sender_instance("test", 256);
+				var public_params = plugin().create_sender_instance("test", "foobar", 256);
 				log("Public params: " + public_params);
 				log("(Size " + public_params.length + " bytes)");
 				var members = ["a", "b", "c", "d"];

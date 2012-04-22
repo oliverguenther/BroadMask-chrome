@@ -10,54 +10,137 @@
 		<script src="../js/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../js/app.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/javascript" charset="utf-8">
-			function print_users(users) {
+
+			var bg = chrome.extension.getBackgroundPage(),
+			bm = bg.broadmask;
+
+
+			function cached_friends() {
+				try {
+					return JSON.parse(localStorage.facebook_cache).friends;
+				} catch (e) {
+					console.error("Couldn't read from facebook cache. " + e);
+					return {};
+				}
+			}
+
+
+			function print_stored_map() {
+				var users = bm.module.gpg_associatedKeys(),
+				friends = cached_friends();
 				var rows = [];
-				$.each(users, function(i, user) {
+				$.each(users, function(id, key_id) {
+					var friend_name = friends[id];
 					rows.push("<tr><td>");
-					rows.push(user.name);
+					rows.push(friend_name);
 					rows.push("</td><td>");
-					rows.push(user.id);
+					rows.push(id);
 					rows.push("</td><td>");
-					rows.push(user.keyid);
+					rows.push(key_id);
 					rows.push('</td><td class="centered"><a href="javascript:keylist_remove(');
-					rows.push(user.id); 
+					rows.push(id); 
 					rows.push(')"><i class="icon-minus-sign"></i></a></td></tr>');
 				});
-				$("#user_list").append('<table class="table table-bordered table-striped"><thead><tr><th>Name</th><th>ID</th><th>PGP Key-ID</th><th>Remove</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
+				if (rows.length > 0) {
+					$("#user_list").replaceWith('<table class="table table-bordered table-striped"><thead><tr><th>Name</th><th>ID</th><th>PGP Key-ID</th><th>Remove</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
+				}
 
 			}
 
 			function keylist_remove(userid) {
 				if (confirm("Do you want to disable the GPG key mapping for user " + userid + "?")) {
-					console.log("FU");
+					bm.module.gpg_remove_key(String(userid));
+					location.reload(true);
 				}
 			}
 
 			$(document).ready(function () {
-				if (localStorage.cached_users) {
-					var users = JSON.parse(localStorage.cached_users),
-						friends = JSON.parse(localStorage.facebook_cache).friends,
-						users_typeahead = [];
+				print_stored_map();
 
-					print_users(users);
-					$.each(users, function () {
-						users_typeahead.push(this.name);
+				/** Create autocomplete cache for friends */
+				var typeaheadFriends = function () {
+					var friends = cached_friends();
+					if (Object.size(friends) === 0) {
+						disableForm("#create_user_map");
+					}
+
+					var users_typeahead = [], 
+					users_id_map = {};
+
+					$.each(friends, function (id, name) {
+						users_typeahead.push(name);
+						users_id_map[name] = id;
 					});
-					$("#instance_name").typeahead({
-						"source": friends,
+					$("#friend_name").typeahead({
+						"source": users_typeahead,
 						"items": 5,
 					});
 
-					// mapping refresh
-					$("#user_mapping_refresh").click(function () {
-						$(this).button('loading');
-						// TODO
+					$("#btn-create-mapping").click(function () {
+						$("#create_user_success").hide();
+						resetFormErrors();
+						var user = {};
+
+						if (!$("#friend_name").val()) {
+							return formError("#friend_name", "No user name specified");
+						}
+						user.name = $("#friend_name").val();
+						user.id = users_id_map[user.name];
+						if (!user.id) {
+							return formError("#friend_name", "User id for user " + user.name + " not found.");
+						}
+
+						if ($("#key_id").val()) {
+							user.key_id = $("#key_id").val().split(" ").join(""); // remove spaces from fingerprint
+							var result = bm.module.gpg_import_key(user.key_id, false);
+
+							if (result.error) {
+								return formError("#key_id", "Could not find key with id " + user.key_id + ". Error was: " + result.error_msg);
+							} else if (Object.size(result) === 1) {
+								bm.module.gpg_store_keyid(user.id, user.key_id);
+								$("#create_user_success").show();
+								resetForm("#create_user_map");
+								print_stored_map();
+							} else {
+								return formError("#key_id", "Couldn't find unique key-id. Input yielded " + Object.size(result)  + " results. Enter a complete PGP-key id or fingerprint");
+							}
+						} else if ($("#key_block").val()) {
+							var key_data = $("#key_block").val();
+							var result = bm.module.gpg_import_key(key_data, true);
+							if (!result || result.error) {
+								return formError("#key_block", "Could not import key. Error was: " + result.error_msg);
+							} else if (Object.size(result.imports) === 1) {
+								var imported_key = Object.pop(result.imports);
+								bm.module.gpg_store_keyid(user.id, imported_key.fingerprint);
+								$("#create_user_success").show();
+								resetForm("#create_user_map");
+								print_stored_map();
+							} else {
+									return formError("#key_block", "Couldn't extract PGP-key. (Found " + Object.size(result.imports) + " keys). Paste one PGP-block only!");
+								}
+						}
+						return false;
+					});
+				};
+
+				if (localStorage.facebook_cache) {
+					typeaheadFriends();
+				} else {
+					// Check and update cache
+					chrome.extension.getBackgroundPage().broadmask.osn.checkCache(typeaheadFriends);
+				}
+
+
+
+				// mapping refresh
+				$("#user_mapping_refresh").click(function () {
+					$(this).button('loading');
+					// TODO
 						setTimeout(function () {
 							$("#user_mapping_refresh").button('reset');
 						}, 2000);
-					});
+				});
 
-				}
 			});
 		</script>
 	</head>
@@ -109,17 +192,20 @@
 							</p>
 
 							<p>
-								<a id="user_mapping_refresh" data-loading-text="Refreshing" class="btn btn-primary"><i class="icon-white icon-refresh"></i> Update manually</a>
+							<a id="user_mapping_refresh" data-loading-text="Refreshing" class="btn btn-primary"><i class="icon-white icon-refresh"></i> Update manually</a>
 							</p>
 						</div>
 						<div class="page-header">
 							<h3>Create mapping <small>Create mapping of friends to PGP keys</small></h3>
 						</div>	
-						<form id="create_instance" class="form form-horizontal">
+						<div style="display:none" id="create_user_success" class="alert alert-success">
+							The user mapping has been created.
+						</div>
+						<form id="create_user_map" class="form form-horizontal">
 							<div class="control-group">
-								<label class="control-label"  for="instance_name">Friend name</label>
+								<label class="control-label"  for="friend_name">Friend name</label>
 								<div class="controls">
-									<input type="text" autocomplete="off" class="input-xlarge" id="instance_name">
+									<input type="text" autocomplete="off" class="input-xlarge" id="friend_name">
 									<p class="help-block light">Enter the name or id of your friend you want to enter a PGP-Key for</p>
 								</div>
 							</div>
@@ -127,18 +213,18 @@
 								<label class="control-label" for="key_id">PGP-Key Identifier</label>
 								<div class="controls">
 									<input type="text" class="input-xlarge" id="key_id">
-									<p class="help-block light">Enter the <strong>PGP Public-Key</strong> identifier or fingerprint you want to associate with this user</p>
+									<p class="help-block light">Enter the <strong>PGP Public-Key</strong> identifier or fingerprint you want to associate with this user. <br/>Note: A corresponding key must be found in your GPG keychain.</p>
 								</div>
 							</div>
 							<div class="control-group">
 								<label class="control-label" for="key_block">PGP Public-Key Block</label>
 								<div class="controls">
 									<textarea class="span6" id="key_block" rows="15"></textarea>
-									<p class="help-block light">Alternatively, paste the PGP Public-Key Block you want to associate with this user</p>
+									<p class="help-block light">Alternatively, paste the PGP Public-Key Block you want to associate with this user. The embedded key will be imported to your keychain.</p>
 								</div>
 							</div>
 							<div class="form-actions">
-								<button type="submit" class="btn btn-success">Create mapping</button>
+								<button id="btn-create-mapping" type="submit" class="btn btn-success">Create mapping</button>
 								<button class="btn">Reset</button>
 							</div>
 						</form>
