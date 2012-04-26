@@ -6,8 +6,8 @@ function Broadmask_Facebook() {
 	// Facebook API details
 	this.app_id = "281109321931593";
 
-	// update cache
-	this.checkCache();
+	// update cache, but do not force auth
+	this.authorize(false, this.checkCache);
 
 
 
@@ -40,23 +40,23 @@ Broadmask_Facebook.prototype.getFBData = function (url, successcb, errorcb) {
 		var jqxhr = $.getJSON(url, {access_token : localStorage.fbtoken}, function (response) {
 
 		})
-			.success(function (response) {
-				if (typeof response === 'object') {
-					successcb(response);
-				} else {
-					console.log("Signed data request to " + url + " : unexpected response '" + response + "'");
-				}
-			})
-			.fail(function (response) {
-				var error = response.status;
-				try {
-					error = JSON.parse(response.responseText);
-				} catch (e) { /* keep error */ }
+		.success(function (response) {
+			if (typeof response === 'object') {
+				successcb(response);
+			} else {
+				console.log("Signed data request to " + url + " : unexpected response '" + response + "'");
+			}
+		})
+		.fail(function (response) {
+			var error = response.status;
+			try {
+				error = JSON.parse(response.responseText);
+			} catch (e) { /* keep error */ }
 
-				if (typeof errorcb === 'function') {
-					errorcb(error);
-				}
-			});
+			if (typeof errorcb === 'function') {
+				errorcb(error);
+			}
+		});
 		return true;
 	} else {
 		return false;
@@ -75,16 +75,9 @@ Broadmask_Facebook.prototype.is_authorized = function (callback) {
 		}
 	}, function (errormsg) {
 		if (typeof errormsg === 'object' && errormsg.error) {
-			// Reauth automatically
-			if (errormsg.error.code === 190 && localStorage.fbauthorized) {
-				that.authorize(function () {
-					callback(true);
-				});
-			}
-		} else {
 			console.warn("Authorization check failed. Error was " + JSON.stringify(errormsg));
-			callback(false);
 		}
+		callback(false);
 	});
 	if (!started) {
 		console.warn("No token available");
@@ -92,35 +85,39 @@ Broadmask_Facebook.prototype.is_authorized = function (callback) {
 	}
 };
 
-Broadmask_Facebook.prototype.authorize = function (callback) {
+
+Broadmask_Facebook.prototype.request_token = function (callback) {
+	"use strict";
+	var that = this;
+	delete localStorage.fbtoken;
+	chrome.tabs.getCurrent(function (tab) {
+		chrome.tabs.onUpdated.addListener(function () {
+			chrome.extension.getBackgroundPage().onFacebookLogin(function () {
+				that.checkCache();
+				callback();
+			}, tab);
+		});
+		chrome.tabs.create({'url': "https://www.facebook.com/dialog/oauth?client_id=" + that.app_id + "&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token&scope=publish_stream,create_note,read_friendlists"},
+			null);
+	});
+};
+
+Broadmask_Facebook.prototype.authorize = function (force_first_auth, callback) {
 	"use strict";
 
-	var that = this;
-
-	var requestToken = function () {
-		delete localStorage.fbtoken;
-		chrome.tabs.getCurrent(function (tab) {
-			chrome.tabs.onUpdated.addListener(function () {
-				chrome.extension.getBackgroundPage().onFacebookLogin(function () {
-					that.checkCache();
-					callback();
-				}, tab);
-			});
-			chrome.tabs.create({'url': "https://www.facebook.com/dialog/oauth?client_id=" + that.app_id + "&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token&scope=publish_stream,create_note,read_friendlists"},
-				null);
+	var that = this,
+		token = localStorage.fbtoken;
+	
+	// only perform first auth if forced
+	if (!token && force_first_auth) {
+		this.request_token();
+	} else {
+		this.is_authorized(function (isvalid) {
+			if (isvalid !== true) {
+				that.request_token();
+			}
 		});
-	};
-
-	var token = localStorage.fbtoken;
-	if (!token) {
-		requestToken();
 	}
-
-	this.is_authorized(function (isvalid) {
-		if (isvalid !== true) {
-			requestToken();
-		}
-	});
 };
 
 /**
@@ -163,13 +160,13 @@ Broadmask_Facebook.prototype.receiversFromID = function (friendlistID) {
 	return null;
 };
 
-Broadmask_Facebook.prototype.armorData = function (dataArr) {
+Broadmask_Facebook.prototype.armorData = function (message) {
 	"use strict";
-	// TODO replace with GPG signature
-	var i, len;
-	dataArr.unshift("=== BEGIN BM DATA ===");
-	dataArr.push("=== END BM DATA ===");
-	return dataArr.join("\n");
+	var d = [];
+	d.push("=== BEGIN BM DATA ===");
+	d.push(message);
+	d.push("=== END BM DATA ===");
+	return d.join("\n");
 
 };
 
@@ -206,9 +203,9 @@ Broadmask_Facebook.prototype.shareOnWall = function (message, allowed_users, cal
 	// Post to Facebook wall using privacy set to this friendlistid
 	var data = {},
 	privacy = {value: 'CUSTOM', friends: 'SOME_FRIENDS', allow: allowed_users.join(",")};
-	data.message = message;
+	data.message = this.armorData(message);
 	data.privacy = JSON.stringify(privacy);
-	sendFBData("https://graph.facebook.com/me/feed", data, callback);
+	this.sendFBData("https://graph.facebook.com/me/feed", data, callback);
 };
 
 /** 

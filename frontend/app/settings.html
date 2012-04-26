@@ -35,10 +35,8 @@
 						$('#facebookloginbtn').val('Revoke Authorization')
 						.removeClass('btn-success').addClass('btn-danger').attr("data-action", "logout");	
 						$('.facebookauth-toggle').show();
-						localStorage.fbauthorized = true;
 					} else {
 						$('#facebookloginbtn').val('Authorize').attr("data-action", "login");
-						localStorage.fbauthorized = false;
 					}
 				});
 			}
@@ -65,7 +63,7 @@
 						$(this).val('Authorize');
 						$(this).removeClass('btn-danger').addClass('btn-success').attr("data-action", "login");
 					} else {
-						broadmask.osn.authorize(check_osn_auth);
+						broadmask.osn.authorize(true, check_osn_auth);
 					}
 				});
 			});

@@ -47,17 +47,20 @@
 				log("Starting receiver instance 'receiver_a'");
 				var sk_a = plugin().get_member_sk("test", "a");
 				log("sk_a " + sk_a + " ( " + sk_a.length + " bytes)");
-				plugin().start_receiver_instance("receiver_a", 256, public_params, sk_a);
+				plugin().create_receiver_instance("receiver_a", "Receiver instance a", 256, public_params, sk_a);
 				log("Decrypting ciphertext");
 				var recovered = plugin().decrypt_b64("receiver_a", ciphertext, false);
 				log("Recovered text: " + recovered);
 
 				log("Starting receiver instance 'receiver_d'");
 				var sk_d = plugin().get_member_sk("test", "d");
-				plugin().start_receiver_instance("receiver_d", 256, public_params, sk_d);
+				plugin().create_receiver_instance("receiver_d", "Receiver instance d", 256, public_params, sk_d);
 				var recovered_d = plugin().decrypt_b64("receiver_d", ciphertext, false);
 				log("Recovered text: " + recovered_d);
 				
+				plugin().remove_instance("test");
+				plugin().remove_instance("receiver_a");
+				plugin().remove_instance("receiver_d");
 
 				
 			} else {

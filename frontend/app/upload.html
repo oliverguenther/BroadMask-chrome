@@ -97,7 +97,38 @@
 
 
 				$('#share-submit-btn').click(function () {
-					enableShareForm(true);
+					var images = [],
+					groupid = $("#share-select").val();
+					$(".thumb").each(function() {
+						var image = {}, 
+						progress = document.createElement("progress");
+						progress.value = 0;
+						progress.max = 100;
+						image.src = this.src;
+
+						image.onprogress = function (e) {
+							if (e.lengthComputable && progress !== null ) {
+								progress.value = (e.loaded / e.total) * 100;
+							}
+						};
+
+						image.callback = function (xhr,	url) {
+							var statusicon = document.createElement("img");
+							if (url) {
+									statusicon.src = chrome.extension.getURL("frontend/img/ok.png");
+									$(progress).after("<p><a href=\"" + url +"\">Link</a></p>");
+							} else {
+									statusicon.src = chrome.extension.getURL("frontend/img/warning.png");
+							}
+							$(progress).replaceWith(statusicon);
+						};
+
+						// append to statusprogress
+						$(this).parent().parent().append(progress);
+
+						images.push(image);
+					});
+					bm.shareImages(groupid, images);
 					return false;
 				});
 
@@ -106,15 +137,15 @@
 					return false;
 				});
 
-				if (localStorage.cached_instances) {
+				var instances = bm.module.get_stored_instances();
+				if (Object.size(instances) > 0) {
 					$("#create_users_note").hide();
 
 					/** Fill instances select */
-					var cached_instances = JSON.parse(localStorage.cached_instances),
-						options = [];
-					$.each(cached_instances, function (i, instance) {
+					var options = [];
+					$.each(instances, function (id, instance) {
 						options.push("<option value=\"");
-						options.push(instance.id);
+						options.push(id);
 						options.push("\">");
 						options.push(instance.name);
 						options.push("</option>");

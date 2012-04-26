@@ -26,11 +26,11 @@ function Broadmask_Picasa() {
 * @param file a BMP as string
 *
 */
-Broadmask_Picasa.prototype.uploadImage = function (b64bmp, progress, callback) {
+Broadmask_Picasa.prototype.uploadImage = function (b64bmp, progresscb, callback) {
 	"use strict";
 	// file is the wrapped BMP as string, base64 encoded 
 	var file = atob(b64bmp);
-	// we need to convert it to a blob - which is just a bit ugly
+	// we need to convert it to a blob
 	var bb = new window.WebKitBlobBuilder();
 	var byteArray = new Uint8Array(file.length);
 	for (var i = 0, len = file.length; i < len; i++) {
@@ -49,11 +49,12 @@ Broadmask_Picasa.prototype.uploadImage = function (b64bmp, progress, callback) {
 	xhr.setRequestHeader("Content-Type", "image/bmp");
 	xhr.setRequestHeader("Authorization", this.oauth.getAuthorizationHeader(url, method, ''));
 	// set progress handler
-	xhr.upload.onprogress = function(e) {
-		if (e.lengthComputable && progress !== null ) {
-			progress.value = (e.loaded / e.total) * 100;
-		}
-	};
+	xhr.upload.onprogress = progresscb;
+	// xhr.upload.onprogress = function(e) {
+	// 	if (e.lengthComputable && progress !== null ) {
+	// 		progress.value = (e.loaded / e.total) * 100;
+	// 	}
+	// };
 
 	var that = this;
 	xhr.onreadystatechange = function (data) {

@@ -16,6 +16,22 @@
 			var bg = chrome.extension.getBackgroundPage(),
 			bm = bg.broadmask;
 
+			function instance_type(val) {
+				switch(val) {
+					case 1:
+						return "Broadcast Encryption (Sender)"
+						break;
+					case 2:
+						return "Broadcast Encryption (Receiver)"
+						break;
+					case 4:
+						return "Shared-Key"
+						break;
+					default:
+						return "unknown";
+				}
+			}
+
 			function print_instances() {
 				var instances = bm.module.get_stored_instances(),
 				rows = [];
@@ -25,9 +41,9 @@
 					rows.push('</td><td style="word-break: break-all">');
 					rows.push(instance.id);
 					rows.push("</td><td>");
-					rows.push(instance.type);
+					rows.push(instance_type(instance.type));
 					rows.push("</td><td>");
-					rows.push(instance.max_users);
+					rows.push((instance.max_users == 0) ? "-" : instance.max_users);
 					rows.push('</td><td class="centered"><a href="javascript:instance_remove(\'');
 					rows.push(instance.id); 
 					rows.push('\')"><i class="icon-minus-sign"></i></a></td></tr>');
@@ -93,17 +109,21 @@
 							maxusers += 2;
 						});
 						inst.users = users;
-						var i = 3, pow = 0;
-						while (pow <= maxusers) {
-							pow = Math.pow(2, i++);
-						}
-						inst.max_size = pow;
+
 						inst.id = Crypto.SHA256(inst.name + users.join("") + inst.type);
 
 						if (inst.type === "bes") {
+							var i = 3, pow = 0;
+							while (pow <= maxusers) {
+								pow = Math.pow(2, i++);
+							}
+							inst.max_size = pow;
 							var params = bm.module.create_sender_instance(inst.id, inst.name, pow); 
 							console.log(params);
+						} else {
+							bm.module.create_shared_instance(inst.id, inst.name);
 						}
+						var added_members = bm.module.add_members(inst.id, users);
 						$("#create_instance_success").show();
 						print_instances();
 					});

@@ -42,6 +42,74 @@ Broadmask.prototype.handleImages = function (urls, cb) {
 	processImages(urls, this.imgHost.fetchImage.bind(this.imgHost), cb);
 };
 
+
+
+Broadmask.prototype.asyncLoop = function (array, fn, callback) {
+	if(Object.prototype.toString.call(array) !== '[object Array]') {
+		return;
+	}
+
+	var completed = 0,
+	result = [];
+	if (array.length === 0) {
+		callback(result);
+	}
+	for(var i = 0, len = array.length; i < len; i++) {
+		var src = array[i];
+		fn(src, function(res) {
+			result.push(res);
+			completed++;
+			if(completed === array.length) {
+				callback(result);
+			}
+		});
+	}
+};
+
+/**
+* Share the images to the defined group instance
+* @param groupid The group instance id
+* @param images array of object 
+* {src: 'image data url', onprogress: 'onprogress callback function', callback: 'success/error callback'}
+*/
+Broadmask.prototype.shareImages = function (groupid, images) {
+	var bm = this;
+
+	var processImage = function (img, processcb) {
+		bm.encrypt(groupid, img.src, true, function (ct_wrapped) {
+			// upload content
+			bm.imgHost.uploadImage(ct_wrapped, img.onprogress, function(xhr, url) {
+				img.callback(xhr, url);
+				if (url) {
+					processcb(url);
+				} else {
+					console.error("Upload failed. " + xhr.status);
+				}
+			});
+		});	
+	};
+
+
+	this.asyncLoop(images, processImage, function (urls) {
+		var share = {},
+		receivers;
+
+		// build url object
+		share.gid = groupid;
+		share.message = JSON.stringify({'links': urls});
+
+		// Get receivers
+		receivers = bm.module.get_instance_members(groupid);
+
+		// Share as JSON string, base64 encoded
+		bm.osn.shareOnWall(btoa(JSON.stringify(share)), Object.keys(receivers), function() {
+			console.log("wee");
+		});
+
+	});
+};
+
+
 Broadmask.prototype.uploadImage = function (scope, receivers, imageElement, callback) {
 	var that = this;
 	this.encrypt(scope, receivers, imageElement.src, true, function(wrapped) {
@@ -66,7 +134,7 @@ Broadmask.prototype.uploadImage = function (scope, receivers, imageElement, call
 };
 
 
-Broadmask.prototype.shareParams = function (scope, receivers, public_params, privkeys) {
+Broadmask.prototype.shareParams = function (groupid, content) {
 	"use strict";
 	if (!localStorage["system_" + scope]) {
 		var system = {},
@@ -84,7 +152,7 @@ Broadmask.prototype.shareParams = function (scope, receivers, public_params, pri
 
 			content.message = privkeys[i];
 			content.privacy = {value: 'CUSTOM', friends: 'SOME_FRIENDS', allow: receivers[i]};
-			
+
 
 			message.body = $.param(content);
 			message.relative_url = "me/feed";
@@ -96,49 +164,44 @@ Broadmask.prototype.shareParams = function (scope, receivers, public_params, pri
 			console.log(result);
 		});
 
-		}
-	};
-
-	/** Send request to encrypt to BMP */
-	Broadmask.prototype.encrypt = function (scope, receivers, data, asimage, callback) {
-		// Start sender instance
-		var public_params = this.module.start_sender_instance(scope, 256),
-		privkeys = [];
-
-		for (var i = 0; i < receivers.length; i += 1) {
-			this.module.add_member(scope, receivers[i]);
-			var privkey_i = this.module.get_member_sk(scope, receivers[i]);
-			privkeys[receivers[i]] = privkey_i;
-		}
-
-		this.shareParams(scope, receivers, public_params, privkeys);
-
-		var cts = this.module.encrypt_b64(scope, receivers, data, asimage);
-		callback(cts);
-	};
-
-	/** Send request to unwrap image to BMP */
-	Broadmask.prototype.decrypt = function (scope, data, fromimage, callback) {
-	};
-
-	Broadmask.prototype.getKeyMap = function (callback) {
-		var list = this.module.gpg_associatedKeys();
-		callback(list);
 	}
+};
+
+/** Send request to encrypt to BMP */
+Broadmask.prototype.encrypt = function (groupid, data, asimage, callback) {
+	var members = this.module.get_instance_members(groupid) 
+		receivers = [];
+
+	$.each(members, function (id, pn) {
+		receivers.push(id);
+	});
+
+	var cts = this.module.encrypt_b64(groupid, receivers, data, asimage);
+	callback(cts);
+};
+
+/** Send request to unwrap image to BMP */
+Broadmask.prototype.decrypt = function (scope, data, fromimage, callback) {
+};
+
+Broadmask.prototype.getKeyMap = function (callback) {
+	var list = this.module.gpg_associatedKeys();
+	callback(list);
+}
 
 
-	/** Called when NPAPI plugin is loaded */
-	Broadmask.prototype.moduleDidLoad = function () {
-		this.module = document.getElementById("broadmask");
-	};
+/** Called when NPAPI plugin is loaded */
+Broadmask.prototype.moduleDidLoad = function () {
+	this.module = document.getElementById("broadmask");
+};
 
-	Broadmask.prototype.moduleValid = function () {
-		return (this.module && this.module.valid);
-	}
+Broadmask.prototype.moduleValid = function () {
+	return (this.module && this.module.valid);
+}
 
-	Broadmask.prototype.run = function () {
-		var listener = document.getElementById("broadmask_listener");
+Broadmask.prototype.run = function () {
+	var listener = document.getElementById("broadmask_listener");
 
-		// Setup NPAPI plugin
-		listener.innerHTML = '<object id="broadmask" type="application/x-broadmask" width="0" height="0"><param name="onload" value="pluginLoaded" /></object>';
-	};
+	// Setup NPAPI plugin
+	listener.innerHTML = '<object id="broadmask" type="application/x-broadmask" width="0" height="0"><param name="onload" value="pluginLoaded" /></object>';
+};

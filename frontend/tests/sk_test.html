@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<head>
+	<link rel="stylesheet" href="../css/bootstrap.css" type="text/css" charset="utf-8"/>
+	<script type="text/javascript" charset="utf-8">
+		function plugin0()
+		{
+			return document.getElementById('plugin0');
+		}
+		plugin = plugin0;
+		function addEvent(obj, name, func)
+		{
+			if (window.addEventListener) {
+				obj.addEventListener(name, func, false); 
+			} else {
+				obj.attachEvent("on"+name, func);
+			}
+		}
+
+		function load()
+		{
+			addEvent(plugin(), 'test', function(){
+				alert("Received a test event from the plugin.")
+			});
+		}
+
+
+		function pluginLoaded() {
+			if (plugin().valid === true) {
+				plugin().create_shared_instance("1", "Test instance");
+				var c = plugin().sk_encrypt_b64("1", "This is a test", true);
+				var r = plugin().sk_decrypt_b64("1", c, true);
+				plugin().remove_instance("1");
+			} else {
+				alert("Not valid :(");
+			}
+		}
+
+		function addTestEvent()
+		{
+			addEvent(plugin(), 'echo', function(txt,count){
+				alert(txt+count);
+			});
+		}
+
+		function testEvent()
+		{
+			plugin().testEvent();
+		}
+
+	</script>
+</head>
+<body>
+	<object id="plugin0" type="application/x-broadmask" width="300" height="300">
+		<param name="onload" value="pluginLoaded" />
+	</object><br />
+</body>
+</html>
+
+
+
