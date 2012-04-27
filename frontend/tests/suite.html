@@ -32,16 +32,33 @@
 				}
 				var plaintext = "This is a test string.";
 				log("Encrypting '" + plaintext + "' using sending instance 'test' to " + members.join(", "));
-				var ciphertext = plugin().encrypt_b64("test", receivers, plaintext, false);
+				var enc_result = plugin().encrypt_b64("test", receivers, plaintext, false);
+				if (!enc_result.ciphertext) {
+					log("Encryption failed!");
+					return;
+				}
+				var ciphertext = enc_result.ciphertext;
 				log("Output (HDR, receivers, AES IV) + AES encrypted ct is " + ciphertext);
 				log("(Size: " + ciphertext.length + " bytes)");
-				var sk_ciphertext = plugin().sk_encrypt_b64(plaintext, false);
-				var sk_ciphertext_o = JSON.parse(sk_ciphertext);
+
+				var plaintext_img = "Lorem Ipsum";
+				log("Encrypting '" + plaintext_img + "' AS BMP using sending instance 'test' to " + members.join(", "));
+				var enc_result_img = plugin().encrypt_b64("test", receivers, plaintext_img, true);
+				if (!enc_result_img.ciphertext) {
+					log("Encryption failed!");
+					return;
+				}
+				var ciphertext_img = enc_result_img.ciphertext;
+				log("Output (HDR, receivers, AES IV) + AES encrypted ct is " + ciphertext_img);
+				log("(Size: " + ciphertext_img.length + " bytes)");
+				plugin().create_shared_instance("shared_test", "Shared-Key Test instance");
+				var sk_ciphertext = plugin().sk_encrypt_b64("shared_test", plaintext, false);
+				var sk_ciphertext_o = sk_ciphertext.ciphertext
 				sklog("Encrypting '" + plaintext + " with SK-system");
-				sklog("IV " + sk_ciphertext_o.iv + " (length " + sk_ciphertext_o.iv.length + ")");
-				sklog("AES KEY " + sk_ciphertext_o.key + " (length " + sk_ciphertext_o.key.length + ")");
-				sklog("(Distributed among 256 members -> 256 * " + sk_ciphertext_o.key.length + " = " + (sk_ciphertext_o.key.length * 256) + " bytes");
-				sklog("CT " + sk_ciphertext_o.ct + " (length " + sk_ciphertext_o.ct.length + ")");
+				sklog("Ciphertext [12Byte IV + CT] " + sk_ciphertext_o + " (length " + sk_ciphertext_o.length + ")");
+
+				var sk_recovered = plugin().sk_decrypt_b64("shared_test", sk_ciphertext.ciphertext, false);
+				sklog("Recovered shared-key plaintext " + sk_recovered.plaintext);
 
 
 				log("Starting receiver instance 'receiver_a'");
@@ -50,14 +67,29 @@
 				plugin().create_receiver_instance("receiver_a", "Receiver instance a", 256, public_params, sk_a);
 				log("Decrypting ciphertext");
 				var recovered = plugin().decrypt_b64("receiver_a", ciphertext, false);
-				log("Recovered text: " + recovered);
+				log("Recovered text: " + JSON.stringify(recovered));
 
 				log("Starting receiver instance 'receiver_d'");
 				var sk_d = plugin().get_member_sk("test", "d");
 				plugin().create_receiver_instance("receiver_d", "Receiver instance d", 256, public_params, sk_d);
 				var recovered_d = plugin().decrypt_b64("receiver_d", ciphertext, false);
-				log("Recovered text: " + recovered_d);
+				log("Recovered text: " + JSON.stringify(recovered_d));
+
+				log("Decrypting BMP ciphertext");
+				var recovered_img = plugin().decrypt_b64("receiver_a", ciphertext_img, true);
+				log("Recovered text: " + JSON.stringify(recovered_img));
 				
+				var recovered_img_d = plugin().decrypt_b64("receiver_d", ciphertext_img, true);
+				log("Recovered text: " + JSON.stringify(recovered_img_d));
+
+				sklog("Encrypting '" + plaintext + " with SK-system as BMP");
+				var sk_ciphertext_img = plugin().sk_encrypt_b64("shared_test", plaintext, true);
+				sk_ciphertext_img = sk_ciphertext_img.ciphertext;
+				sklog("Ciphertext [12Byte IV + CT] " + sk_ciphertext_img + " (length " + sk_ciphertext_img.length + ")");
+
+				var sk_recovered_img = plugin().sk_decrypt_b64("shared_test", sk_ciphertext_img, true);
+				sklog("Recovered shared-key plaintext " + sk_recovered_img.plaintext);
+
 				plugin().remove_instance("test");
 				plugin().remove_instance("receiver_a");
 				plugin().remove_instance("receiver_d");

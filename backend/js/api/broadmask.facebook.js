@@ -166,6 +166,7 @@ Broadmask_Facebook.prototype.armorData = function (message) {
 	d.push("=== BEGIN BM DATA ===");
 	d.push(message);
 	d.push("=== END BM DATA ===");
+	d.push("This message has been encrypted using Broadmask");
 	return d.join("\n");
 
 };

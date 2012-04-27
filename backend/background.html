@@ -103,24 +103,6 @@
 
 
 
-			chrome.extension.onRequest.addListener(
-				function(request, sender, sendResponse) {
-					if (typeof request !== 'object') {
-						return;
-					}
-
-					if (request.message === 'newBMdataFromCS') {
-						broadmask.handleImages(request.data, function() {
-							if (bmTabid !== null) {
-								chrome.tabs.sendRequest(bmTabid, 'updateStatus', function() {
-									chrome.tabs.update(bmTabid, {active: true});
-								});
-							}
-						});
-					}
-
-				});
-
 				chrome.browserAction.onClicked.addListener(function() {
 					chrome.tabs.create({url: chrome.extension.getURL("frontend/app/updates.html")}, function(tab) {
 						bmTabid = tab.id;

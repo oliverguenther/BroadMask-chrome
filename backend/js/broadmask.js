@@ -7,39 +7,94 @@ function Broadmask() {
 	// Handler for NPAPI module
 	this.module = null;
 
+	// Register as handler for incoming message requests
+	var that = this;
+	chrome.extension.onRequest.addListener(
+		function (request, sender, sendResponse) {
+			if (typeof request !== 'object') {
+				return;
+			}
+
+			if (request.message === 'decrypt') {
+				try {
+					var sharemsg = JSON.parse(atob(request.data));
+					if (sharemsg.message.links) {
+						// Download, decrypt images
+						that.handleImages(sharemsg.gid, sharemsg.message.links, function (dataURLs) {
+							sendResponse({urls: dataURLs});
+						});
+					}
+				} catch (e) {
+					console.error("Couldn't parse request payload " + request.data + ". Error was " + e);
+				}
+			}
+		}
+	);
+
 }
 
 
 /**
 * Handle new images from API calls or content scripts.
 * Unwraps the message and requests images from the imgHost
+* @param groupid instance associated to the urls
 * @param urls an array of image URLs
 * @param callback a function to display/handle the loaded dataURLs
 */
-Broadmask.prototype.handleImages = function (urls, cb) {
+Broadmask.prototype.handleImages = function (groupid, urls, cb) {
 	"use strict";
 	if (!Array.isArray(urls)) {
 		return;
 	}
 
 	var processImages = function (array, fn, callback) {
-		var completed = 0;
+		var completed = 0,
+			result = [];
 		if (array.length === 0) {
-			callback(); // done immediately
+			callback(result); // done immediately
 		}
 		for(var i = 0, len = array.length; i < len; i++) {
 			var src = array[i];
 			fn(src, function(dataURL) {
-				chrome.extension.getBackgroundPage().newUnread(src, dataURL);
+				result.push(dataURL);
 				completed++;
 				if(completed === array.length) {
-					callback();
+					callback(result);
 				}
 			});
 		}
 	};
 
-	processImages(urls, this.imgHost.fetchImage.bind(this.imgHost), cb);
+	var that = this;
+	processImages(urls, function(src, callback) {
+		var fetchfn = that.imgHost.fetchImage.bind(that.imgHost);
+
+		// Get instance descriptor
+		var instance = that.module.get_instance_descriptor(groupid);
+
+		if (instance.error) {
+			// instance doesn't exist
+			cb({error: true, error_msg: "No instance set up with groupid " + groupid});
+			return;
+		}
+
+		if (instance.type === 1) {
+			// BES_sender, this is your own data
+			cb({error:true, error_msg: "This is your own content"});
+		} else if (instance.type === 2 || instance.type === 4) {
+			// receiver or shared instane
+			// Download image
+			fetchfn(src, function (bmp_ct) {
+				// decrypt content
+				var plaintext;
+				if (instance.type === 2) {
+					plaintext = that.module.decrypt_b64(groupid, bmp_ct, true);
+				} else {
+					plaintext = that.module.sk_					
+				}
+			});
+		}
+	}, cb);
 };
 
 
@@ -96,7 +151,7 @@ Broadmask.prototype.shareImages = function (groupid, images) {
 
 		// build url object
 		share.gid = groupid;
-		share.message = JSON.stringify({'links': urls});
+		share.message = {'links': urls};
 
 		// Get receivers
 		receivers = bm.module.get_instance_members(groupid);
@@ -106,30 +161,6 @@ Broadmask.prototype.shareImages = function (groupid, images) {
 			console.log("wee");
 		});
 
-	});
-};
-
-
-Broadmask.prototype.uploadImage = function (scope, receivers, imageElement, callback) {
-	var that = this;
-	this.encrypt(scope, receivers, imageElement.src, true, function(wrapped) {
-		var progress = document.createElement("progress");
-		progress.value = 0;
-		progress.max = 100;
-		$(imageElement).parent().parent().append(progress);
-		that.imgHost.uploadImage(wrapped, progress, function (xhrstatus, url) {
-			var statusicon = document.createElement("img");
-			if (url !== undefined) {
-				statusicon.src = chrome.extension.getURL("img/ok.png");
-				imageElement.setAttribute("rel", url);
-				$(imageElement).parent().parent().append("<p><a href=\"" + url +"\">Link</a></p>");
-				callback(url);
-			} else {
-				statusicon.src = chrome.extension.getURL("img/warning.png");
-				// TODO allow retry with dataURL (popover)
-			}
-			$(progress).replaceWith(statusicon);
-		});
 	});
 };
 
@@ -170,7 +201,7 @@ Broadmask.prototype.shareParams = function (groupid, content) {
 /** Send request to encrypt to BMP */
 Broadmask.prototype.encrypt = function (groupid, data, asimage, callback) {
 	var members = this.module.get_instance_members(groupid) 
-		receivers = [];
+	receivers = [];
 
 	$.each(members, function (id, pn) {
 		receivers.push(id);

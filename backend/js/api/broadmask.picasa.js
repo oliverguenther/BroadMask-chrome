@@ -70,27 +70,6 @@ Broadmask_Picasa.prototype.uploadImage = function (b64bmp, progresscb, callback)
 	xhr.send(bmp);
 };
 
-/**
- * Unwrap an image
- * @param blob An image wrapped in image/bmp as a blob
- * @callback called with the returned dataURL
- */
-Broadmask_Picasa.prototype.unwrapFromBlob = function (blob, callback) {
-	"use strict";
-	var reader = new FileReader();
-	var broadmask = this.broadmask;
-	// Only process image files.
-	reader.onload = (function (theFile) {
-		return function (e) {
-			broadmask.unwrapImage(e.target.result, function (message) {
-				callback(message.data);
-			});
-		};
-	})(blob);
-	reader.readAsBinaryString(blob);
-
-};
-
 /** 
 * INTERNAL
 * Retrieve an image, either from local cache or from Picasa.
@@ -107,12 +86,7 @@ Broadmask_Picasa.prototype.fetchImage = function (url, callback) {
 			callback(pval); 
 		} else { 
 			console.log("Downloading... " + url);
-			that.downloadImage(url, function (dataURL) {
-				// Cache image for next time
-				console.log("Got " + url);
-				storage.store(url, dataURL);
-				callback(dataURL);
-			}); 
+			that.downloadImage(url, callback);	
 		}
 	});
 };
@@ -145,7 +119,7 @@ Broadmask_Picasa.prototype.downloadImage = function (url, callback) {
 						var bb = new window.WebKitBlobBuilder();
 						bb.append(this.response);
 						var blob = bb.getBlob(content.type);
-						that.unwrapFromBlob(blob, function (dataURL) { callback(atob(dataURL)); }); 
+						callback(btoa(blob));
 					}
 				}
 				fetch.send();

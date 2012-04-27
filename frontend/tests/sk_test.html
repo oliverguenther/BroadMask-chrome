@@ -28,7 +28,7 @@
 			if (plugin().valid === true) {
 				plugin().create_shared_instance("1", "Test instance");
 				var c = plugin().sk_encrypt_b64("1", "This is a test", true);
-				var r = plugin().sk_decrypt_b64("1", c, true);
+				var r = plugin().sk_decrypt_b64("1", c.ciphertext, true);
 				plugin().remove_instance("1");
 			} else {
 				alert("Not valid :(");
