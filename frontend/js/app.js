@@ -27,6 +27,9 @@ function userid2name(userid) {
 }
 
 function cached_friends() {
+	if (!localStorage.facebook_cache) {
+		
+	}
 	try {
 		return JSON.parse(localStorage.facebook_cache).friends;
 	} catch (e) {

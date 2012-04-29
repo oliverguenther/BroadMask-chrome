@@ -62,11 +62,21 @@
 			}
 
 			$(document).ready(function () {
-				var users = bm.module.gpg_associatedKeys(),
-				friends = cached_friends();
+				$("#create_instance :input").attr("disabled", true);
+				$("#create_users_note").hide();
+				bm.osn.checkCache(function(result) {
+					if (result.error) {
+						error(result.error_msg);
+						return;
+					}
+					var users = bm.module.gpg_associatedKeys(),
+					friends = cached_friends();
 
-				if (Object.size(users) > 0) {
-					$("#create_users_note").hide();
+					if (Object.size(users) == 0) {
+						$("#create_users_note").show();
+						return;
+					}
+					$("#create_instance :input").attr("disabled", false);
 					var users_typeahead = [],
 					user_ids = {};
 
@@ -93,6 +103,13 @@
 						}
 
 						return false;
+					});
+
+					$("#add_user").keyup(function(event){
+						if(event.keyCode == 13){
+							$("#btn_add_user").click();
+							$(this).val('');
+						}
 					});
 
 					$("#btn_create_instance").click(function () {
@@ -127,23 +144,8 @@
 						$("#create_instance_success").show();
 						print_instances();
 					});
-
-				} else {
-					$("#create_instance :input").attr("disabled", true);
-				}
-
-
-				$("#add_user").keyup(function(event){
-					if(event.keyCode == 13){
-						$("#btn_add_user").click();
-						$(this).val('');
-					}
-				});
-
-
-
-
 				print_instances();
+				});
 			});
 		</script>
 	</head>

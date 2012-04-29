@@ -9,7 +9,7 @@ function Broadmask_Picasa() {
 		'scope': 'https://picasaweb.google.com/data',
 		'app_name': 'BroadMask'
 	});
-	
+
 	this.bg = chrome.extension.getBackgroundPage();
 	this.broadmask = this.bg.broadmask;
 	// Request storage with a max of 10mb
@@ -51,23 +51,23 @@ Broadmask_Picasa.prototype.uploadImage = function (b64bmp, progresscb, callback)
 	// set progress handler
 	xhr.upload.onprogress = progresscb;
 	// xhr.upload.onprogress = function(e) {
-	// 	if (e.lengthComputable && progress !== null ) {
-	// 		progress.value = (e.loaded / e.total) * 100;
-	// 	}
-	// };
+		// 	if (e.lengthComputable && progress !== null ) {
+			// 		progress.value = (e.loaded / e.total) * 100;
+			// 	}
+			// };
 
-	var that = this;
-	xhr.onreadystatechange = function (data) {
-		if (xhr.readyState === 4) {
-			var url = xhr.getResponseHeader("Content-Location");
-			if (xhr.status === 201 && url != null) {
-				callback(xhr.status, url);
-			} else {
-				callback(xhr.status);
-			}
-		}
-	};
-	xhr.send(bmp);
+			var that = this;
+			xhr.onreadystatechange = function (data) {
+				if (xhr.readyState === 4) {
+					var url = xhr.getResponseHeader("Content-Location");
+					if (xhr.status === 201 && url != null) {
+						callback(xhr.status, url);
+					} else {
+						callback(xhr.status);
+					}
+				}
+			};
+			xhr.send(bmp);
 };
 
 /** 
@@ -79,7 +79,7 @@ Broadmask_Picasa.prototype.uploadImage = function (b64bmp, progresscb, callback)
 Broadmask_Picasa.prototype.fetchImage = function (url, callback) {
 	"use strict";
 	var storage = this.storage,
-		that = this;
+	that = this;
 	storage.get(url, function (pval) {
 		if (pval && 0) { 
 			console.log("cache hit!");
@@ -116,10 +116,9 @@ Broadmask_Picasa.prototype.downloadImage = function (url, callback) {
 
 				fetch.onload = function(e) {
 					if (this.status == 200) {
-						var bb = new window.WebKitBlobBuilder();
-						bb.append(this.response);
-						var blob = bb.getBlob(content.type);
-						callback(btoa(blob));
+						callback({success: true, result: base64ArrayBuffer(this.response)});
+					} else {
+						callback({success: false, error: true, error_msg: "Status was unsuccessful: " +this.status});
 					}
 				}
 				fetch.send();

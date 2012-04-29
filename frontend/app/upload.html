@@ -112,13 +112,15 @@
 							}
 						};
 
-						image.callback = function (xhr,	url) {
+						image.error = error;
+
+						image.success = function (xhr,	url) {
 							var statusicon = document.createElement("img");
 							if (url) {
-									statusicon.src = chrome.extension.getURL("frontend/img/ok.png");
-									$(progress).after("<p><a href=\"" + url +"\">Link</a></p>");
+								statusicon.src = chrome.extension.getURL("frontend/img/ok.png");
+								$(progress).after("<p><a href=\"" + url +"\">Link</a></p>");
 							} else {
-									statusicon.src = chrome.extension.getURL("frontend/img/warning.png");
+								statusicon.src = chrome.extension.getURL("frontend/img/warning.png");
 							}
 							$(progress).replaceWith(statusicon);
 						};
@@ -198,6 +200,10 @@
 				</div>	
 				<div id="app-content" class="span9">
 					<div class="content">
+						<div class="alert-message" id="errormsg" style="display:none">
+							<div id="errors">
+							</div>
+						</div>
 						<div class="page-header">
 							<h3>Upload photos <small> Share new photos with your group</small></h3>
 						</div>	

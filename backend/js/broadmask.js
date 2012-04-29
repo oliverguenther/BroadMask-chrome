@@ -20,8 +20,11 @@ function Broadmask() {
 					var sharemsg = JSON.parse(atob(request.data));
 					if (sharemsg.message.links) {
 						// Download, decrypt images
-						that.handleImages(sharemsg.gid, sharemsg.message.links, function (dataURLs) {
-							sendResponse({urls: dataURLs});
+						that.handleImages(sharemsg.gid, sharemsg.message.links, function (result) {
+							if (result.length > 0) {
+								result = {urls: result};
+							}
+							sendResponse(result);
 						});
 					}
 				} catch (e) {
@@ -80,17 +83,22 @@ Broadmask.prototype.handleImages = function (groupid, urls, cb) {
 
 		if (instance.type === 1) {
 			// BES_sender, this is your own data
-			cb({error:true, error_msg: "This is your own content"});
+			cb({own_message: true, error:true, error_msg: "This is your own content. Currently, decrypting a BES message sent by yourself is not supported.\nSent with instance id: " + instance.id});
 		} else if (instance.type === 2 || instance.type === 4) {
 			// receiver or shared instane
 			// Download image
 			fetchfn(src, function (bmp_ct) {
+				if (bmp_ct.error || !bmp_ct.success) {
+					cb({error: true, error_msg: "Image Download failed:  " + bmp_ct.error});
+					return;
+				}
 				// decrypt content
-				var plaintext;
-				if (instance.type === 2) {
-					plaintext = that.module.decrypt_b64(groupid, bmp_ct, true);
+				var result = that.module.decrypt_b64(groupid, bmp_ct.result, true);
+				if (result.plaintext) {
+					callback(result.plaintext);
 				} else {
-					plaintext = that.module.sk_					
+					// probably an error, just return it directly
+					callback(result);
 				}
 			});
 		}
@@ -125,20 +133,23 @@ Broadmask.prototype.asyncLoop = function (array, fn, callback) {
 * Share the images to the defined group instance
 * @param groupid The group instance id
 * @param images array of object 
-* {src: 'image data url', onprogress: 'onprogress callback function', callback: 'success/error callback'}
+* {src: 'image data url', onprogress: 'onprogress callback function', success: 'success callback', error: 'error callback'}
 */
 Broadmask.prototype.shareImages = function (groupid, images) {
 	var bm = this;
 
 	var processImage = function (img, processcb) {
 		bm.encrypt(groupid, img.src, true, function (ct_wrapped) {
+			if (typeof ct_wrapped !== 'object' || !ct_wrapped.ciphertext) {
+				img.error("Encryption failed " + (ct_wrapped.error ? ct_wrapped.error_msg : 'with unknown error.'));
+			}
 			// upload content
-			bm.imgHost.uploadImage(ct_wrapped, img.onprogress, function(xhr, url) {
-				img.callback(xhr, url);
+			bm.imgHost.uploadImage(ct_wrapped.ciphertext, img.onprogress, function(xhr, url) {
 				if (url) {
+					img.success(xhr, url);
 					processcb(url);
 				} else {
-					console.error("Upload failed. " + xhr.status);
+					img.error("Upload failed. " + xhr.status);
 				}
 			});
 		});	
@@ -200,19 +211,16 @@ Broadmask.prototype.shareParams = function (groupid, content) {
 
 /** Send request to encrypt to BMP */
 Broadmask.prototype.encrypt = function (groupid, data, asimage, callback) {
-	var members = this.module.get_instance_members(groupid) 
-	receivers = [];
-
-	$.each(members, function (id, pn) {
-		receivers.push(id);
-	});
-
-	var cts = this.module.encrypt_b64(groupid, receivers, data, asimage);
+	// TODO async
+	var cts = this.module.encrypt_b64(groupid, data, asimage);
 	callback(cts);
 };
 
 /** Send request to unwrap image to BMP */
-Broadmask.prototype.decrypt = function (scope, data, fromimage, callback) {
+Broadmask.prototype.decrypt = function (groupid, data, fromimage, callback) {
+	// TODO async
+	var pts = this.module.decrypt_b64(groupid, data, fromimage);
+	callback(cts);
 };
 
 Broadmask.prototype.getKeyMap = function (callback) {

@@ -94,7 +94,9 @@ Broadmask_Facebook.prototype.request_token = function (callback) {
 		chrome.tabs.onUpdated.addListener(function () {
 			chrome.extension.getBackgroundPage().onFacebookLogin(function () {
 				that.checkCache();
-				callback();
+				if (typeof callback === 'function') {
+					callback();
+				}
 			}, tab);
 		});
 		chrome.tabs.create({'url': "https://www.facebook.com/dialog/oauth?client_id=" + that.app_id + "&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token&scope=publish_stream,create_note,read_friendlists"},
@@ -130,11 +132,15 @@ Broadmask_Facebook.prototype.revokeAuth = function () {
 
 Broadmask_Facebook.prototype.cache = function () {
 	"use strict";
-	var cache = this.bg.get('facebook_cache');
-	if (cache) {
-		return JSON.parse(cache);
+	if (!localStorage.facebook_cache) {
+		return {};
 	}
-	return {};
+	try {
+		return JSON.parse(localStorage.facebook_cache);
+	} catch (e) {
+		console.warn("Couldn't read localStorage cache. " + e);
+		return {};
+	}
 };
 
 Broadmask_Facebook.prototype.userid2name = function (userid) {
@@ -332,7 +338,9 @@ Broadmask_Facebook.prototype.checkCache = function (callback) {
 		return false;
 	};
 
-	if (!update()) {
+	if (update()) {
+		callback({success: true, message: 'Cache up-to-date'});
+	} else {
 		// update the cache
 		delete localStorage.facebook_cache;
 
