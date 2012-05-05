@@ -79,9 +79,6 @@
 					<ul id="navbar" class="nav nav-list">
 						<li class="nav-header">Facebook</li>
 						<li>
-						<a href="updates.html"><i class="icon-eye-open"></i> Updates</a>
-						</li>
-						<li>
 						<a href="upload.html"><i class="icon-camera"></i> Upload photos</a>
 						</li>
 						<li>
@@ -127,7 +124,38 @@
 								<input type="button" id="facebookloginbtn" class="btn btn-small btn-success" value="Authorize" data-loading-text="authorizing">
 							</div>
 						</div>	
-
+						<div id="gpgkey">
+							<div class="page-header">
+								<h3>PGP-Key <small>Upload your PGP fingerprint to Facebook</small></h3>
+							</div>
+							<p>
+							In order to exchange keys directly through Facebook in an automated fashion, you need to publish your PGP key identifier in your profile.<br/><span class="label label-inverse">Note</span> To create a PGP keypair, use the PGP distribution of your choice.
+							</p>
+							<form id="pgp-form" class="form form-horizontal">
+								<fieldset>
+									<div class="control-group">
+										<label class="control-label" for="key-info">Currently published id</label>
+										<div class="controls">
+<input class="span3" id="key-info" size="24" readonly="readonly" value="None published" type="text"><button id="btn_lookup_key" class="btn btn-small" type="button" disabled>Show on Facebook</button>
+											<p class="help-block light">
+												This is the currently published key identifier
+											</p>
+										</div>
+									</div>
+									<div class="control-group">
+										<label class="control-label" for="key-select">Your PGP-Key</label>
+										<div class="controls">
+											<select id="key-select" disabled>
+											</select>
+										</div>
+									</div>
+									<div class="form-actions">
+										<button id="upload-key-btn" class="btn btn-success" disabled><i class="icon-white icon-arrow-up"></i> Share fingerprint</button>
+										<button id="remove-key-btn"class="btn btn-inverse" disabled>Delete fingerprint</button>
+									</div>
+								</fieldset>
+							</form>
+						</div>
 					</div>
 				</div>
 			</div>

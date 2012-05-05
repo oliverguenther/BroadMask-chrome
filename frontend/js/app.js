@@ -15,27 +15,11 @@ function hideErrors() {
 
 function userid2name(userid) {
 	"use strict";
-	if (localStorage.facebook_cache) {
-		var cache = JSON.parse(localStorage.facebook_cache);
-		if (cache && cache.friends[userid]) {
-			//return '<abbr title="' + userid + '">' + cache.friends[userid] + '</abbr>';
-			return cache.friends[userid];
-		}
+	var cache = chrome.extension.getBackgroundPage().broadmask.osn.cache();
+	if (cache && cache.friends[userid]) {
+		return cache.friends[userid];
 	}
-
 	return userid;
-}
-
-function cached_friends() {
-	if (!localStorage.facebook_cache) {
-		
-	}
-	try {
-		return JSON.parse(localStorage.facebook_cache).friends;
-	} catch (e) {
-		console.error("Couldn't read from facebook cache. " + e);
-		return {};
-	}
 }
 
 function set_navheight() {

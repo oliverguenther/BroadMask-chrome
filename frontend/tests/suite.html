@@ -32,7 +32,7 @@
 				}
 				var plaintext = "This is a test string.";
 				log("Encrypting '" + plaintext + "' using sending instance 'test' to " + members.join(", "));
-				var enc_result = plugin().encrypt_b64("test", receivers, plaintext, false);
+				var enc_result = plugin().bes_encrypt_b64("test", receivers, plaintext, false);
 				if (!enc_result.ciphertext) {
 					log("Encryption failed!");
 					return;
@@ -43,7 +43,7 @@
 
 				var plaintext_img = "Lorem Ipsum";
 				log("Encrypting '" + plaintext_img + "' AS BMP using sending instance 'test' to " + members.join(", "));
-				var enc_result_img = plugin().encrypt_b64("test", receivers, plaintext_img, true);
+				var enc_result_img = plugin().bes_encrypt_b64("test", receivers, plaintext_img, true);
 				if (!enc_result_img.ciphertext) {
 					log("Encryption failed!");
 					return;

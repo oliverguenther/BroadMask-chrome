@@ -30,9 +30,10 @@
 				// console.log(plugin().gpg_store_keyid("100001437141003", "A3A8BDAD7C0C552C"));
 				// console.log(plugin().gpg_get_keyid("100001437141003"));
 				// var enc_a = plugin().gpg_encrypt_for("HIHIHIHI", "15396A7933EB059A");
-				var enc_b = plugin().gpg_encrypt_with("BLABLABLA", "42BC1289F63A0D1977061D8EA3A8BDAD7C0C552C");
+				// var enc_b = plugin().gpg_encrypt_with("BLABLABLA", "42BC1289F63A0D1977061D8EA3A8BDAD7C0C552C");
 				// console.log(plugin().gpg_decrypt(enc_a.encoded_data));
-				console.log(plugin().gpg_associatedKeys());
+				// console.log(plugin().gpg_associatedKeys());
+				plugin().run_benchmark("/Users/oliver/uni/ba/benchmark", function() {alert("Benchmark completed.");});
 			} else {
 				alert("Not valid :(");
 			}

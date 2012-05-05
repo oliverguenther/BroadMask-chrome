@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-		<title>Updates</title>
+		<title>Manage Instances</title>
 		<link rel="stylesheet" href="../css/bootstrap.css" type="text/css" charset="utf-8"/>
 		<link rel="stylesheet" href="../css/app.css" type="text/css" charset="utf-8"/>
 		<script src="/shared/jquery.min.js" type="text/javascript" charset="utf-8"></script>
@@ -70,7 +70,8 @@
 						return;
 					}
 					var users = bm.module.gpg_associatedKeys(),
-					friends = cached_friends();
+					cache = bm.osn.cache(), 
+					friends = (Object.size(users) > 0) ? cache.friends : {};
 
 					if (Object.size(users) == 0) {
 						$("#create_users_note").show();
@@ -158,9 +159,6 @@
 				<div class="span3">
 					<ul id="navbar" class="nav nav-list">
 						<li class="nav-header">Facebook</li>
-						<li>
-						<a href="updates.html"><i class="icon-eye-open"></i> Updates</a>
-						</li>
 						<li>
 						<a href="upload.html"><i class="icon-camera"></i> Upload photos</a>
 						</li>
