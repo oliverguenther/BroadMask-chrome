@@ -101,12 +101,12 @@ Broadmask.prototype.handleImages = function (groupid, urls, cb) {
 		}
 		for(var i = 0, len = array.length; error == false && i < len; i++) {
 			var src = array[i];
-			fn(src, function(result) {
-				if (result.error) {
-					callback(result);
+			fn(src, function(response) {
+				if (response.error) {
+					callback(response);
 					error = true;
-				} else if (result.content) {
-					result.push(result.content);
+				} else if (response.content) {
+					result.push(response.content);
 					completed++;
 					if(completed === array.length) {
 						callback(result);
