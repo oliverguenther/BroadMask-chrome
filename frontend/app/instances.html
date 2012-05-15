@@ -9,6 +9,7 @@
 		<script src="../js/jquery.watch.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../js/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../js/app.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/spin.min.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/javascript" src="../js/sha256.js"></script>
 
 
@@ -32,27 +33,64 @@
 				}
 			}
 
+			function instance_details(id) {
+				var members = bm.module.get_instance_members(id),
+				gpg_map = bm.module.gpg_associatedKeys(),
+				descriptor = bm.module.get_instance_descriptor(id),
+				cache = bm.osn.cache(),
+				rows = [];
+				$("#instancedetail").empty()
+					.append('<div class="page-header"><h3>Details <small>for instance ' + descriptor.name + '</small></h3></div>')
+					.append('<h3>Identifier</h3><p>' + descriptor.id + ' </p>');
+				$.each(members, function (userid, pseudonym) {
+					rows.push("<tr id=\"" + userid + "\" data-type=\"detail\" data-instance=\"" + id + "\"><td>" + cache.friends[userid] + "</td>");
+					rows.push("<td>" + userid + "</td><td>");
+					rows.push("<a href=\"#\" class=\"showsk\" data-id=\"" + userid + "\"><i class=\"icon-lock\"></i> Show private key</a>");
+					if (typeof gpg_map === 'object' && gpg_map[userid]) {
+						rows.push("<br/><a href=\"javascript:upload_key('" + id + "','" + userid + "')\"><i class=\"icon-share\"></i> Publish (<small>PGP key: " + gpg_map[userid] + "</small>)</a>");
+					}	
+					rows.push("</td></tr>");
+				});
+				if (rows.length > 0) {
+				$("#instancedetail").append('<h3>Instance members</h3><table class="table table-bordered table-striped"><thead><tr><th>Name</th><th>Id</th><th>Options</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
+				$(".showsk").click(function () {
+					var userid = $(this).attr("data-id");
+					var cache = bm.osn.cache();
+					var instanceid = $(this).parent().parent().attr("data-instance");
+					var sk = bm.module.get_member_sk(instanceid, userid);
+					modal("#instancedetail", userid, "Private key for user " + userid, 
+					"<p>This is the private key for " + cache.friends[userid] + " (userid " + userid + "). Do not disclose this key to other members.</p><p> " + sk + "</p>");
+				});
+
+				}
+
+				// Print public key if type == 1
+				if (descriptor.type === 1) {
+					var pk = bm.module.get_bes_public_params(id);
+					$("#instancedetail").append("<h3>Public key</h3><p style=\"word-break: break-all\">" + pk.result + "</p>");
+				}
+
+			}
+
 			function print_instances() {
 				var instances = bm.module.get_stored_instances(),
 				rows = [];
 				$.each(instances, function(i, instance) {
-					rows.push("<tr><td>");
+					rows.push("<tr id=\"" + instance.id + "\"><td>");
 					rows.push(instance.name);
-					rows.push('</td><td style="word-break: break-all">');
-					rows.push(instance.id);
 					rows.push("</td><td>");
 					rows.push(instance_type(instance.type));
 					rows.push("</td><td>");
 					rows.push((instance.max_users == 0) ? "-" : instance.max_users);
-					rows.push('</td><td class="centered"><a href="javascript:instance_remove(\'');
-					rows.push(instance.id); 
-					rows.push('\')"><i class="icon-minus-sign"></i></a></td></tr>');
+					rows.push('</td><td class="">');
+					rows.push('<a href="javascript:instance_remove(\'' + instance.id + '\')"><i class="icon-trash"></i> Trash</a><br/>');
+					rows.push('<a href="javascript:instance_details(\'' + instance.id + '\')"><i class="icon-cog"></i> Details</a>');
+					rows.push('</td></tr>');
 				});
 				if (rows.length > 0) {
-					$("#instances").replaceWith('<table class="table table-bordered table-striped"><thead><tr><th>Instance</th><th>Id</th><th>Type</th><th>Size</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
+					$("#instances").replaceWith('<table class="table table-bordered table-striped"><thead><tr><th>Instance</th><th>Type</th><th>Size</th><th>Options</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
 				}
 			}
-
 			function instance_remove(id) {
 				var instances = bm.module.get_stored_instances();
 				if (confirm("Do you REALLY want to delete the instance '" + instances[id].name + "' ?")) {
@@ -61,46 +99,80 @@
 				}
 			}
 
+			function upload_key(instanceid, userid) {
+				var sk = bm.module.get_member_sk(instanceid, userid),
+				descriptor = bm.module.get_instance_descriptor(instanceid);
+
+
+				var instmsg = {};
+				instmsg.type = descriptor.type;
+				instmsg.id = descriptor.id;
+				if (instmsg.type === 1) {
+					var pk = bm.module.get_bes_public_params(instanceid);
+					instmsg.pk = pk.result;
+				}
+				instmsg.sk = sk;
+
+				var enc_msg = bm.module.gpg_encrypt_for(JSON.stringify(instmsg), userid);
+				if (typeof enc_msg !== 'object') {
+					alert("Error: Didn't return from GPG encryption!? " + enc_msg);
+				} else if (enc_msg.error) {
+					alert("Error: " + enc_key.error_msg);
+					return;
+				} else {
+					// share key
+					bm.osn.shareOnWall(enc_msg.encoded_data, [userid], false, function () {});
+				}
+			}
+
 			$(document).ready(function () {
+				$("#instances").append('<div class="alert alert-info"><strong>Loading</strong> Updating cache, fetching instances</div>');
 				$("#create_instance :input").attr("disabled", true);
-				$("#create_users_note").hide();
 				bm.osn.checkCache(function(result) {
 					if (result.error) {
 						error(result.error_msg);
 						return;
 					}
-					var users = bm.module.gpg_associatedKeys(),
+					var mapped_users = bm.module.gpg_associatedKeys(),
 					cache = bm.osn.cache(), 
-					friends = (Object.size(users) > 0) ? cache.friends : {};
+					friends = cache.friends;
 
-					if (Object.size(users) == 0) {
-						$("#create_users_note").show();
+					if (Object.size(friends) == 0) {
+						error("Facebook friends couldn't be fetched. Did you authorize the extension yet?");
 						return;
 					}
 					$("#create_instance :input").attr("disabled", false);
 					var users_typeahead = [],
 					user_ids = {};
-
-					$.each(users, function (id, key) {
-						var name = id;
-						if (friends[id]) {
-							name = friends[id];
-							user_ids[name] = id;
-						}
+					
+					$.each(friends, function(id, name) {
+						user_ids[name] = id;
 						users_typeahead.push(name);
-
 					});
+
 					$("#add_user").typeahead({
 						"source": users_typeahead,
-						"items": 5,
+						"items": 10,
 					});
 
 					$('#btn_add_user').click(function () {
 						var add_user = $("#add_user").val(),
+						classes = ["user_block"];
 						id = user_ids[add_user];
+						
 
 						if (add_user && id) {
-							$('#added_users').append('<div class="user_block" data-id="' + id +'" >' + add_user + '<br/>' + id + '</div>');
+							var content = [];
+							content.push(add_user);
+							content.push("<br/>Facebook ID: ");
+							content.push(id);
+							if (mapped_users[id]) {
+								content.push("<br/>");
+								content.push("PGP fingerprint: ");
+								content.push(mapped_users[id]);
+								classes.push("pgp_user");
+							}
+							$('#added_users').append('<div class="' + classes.join(" ") + '" data-id="' + id +'" >' + content.join("") + '</div>');
 						}
 
 						return false;
@@ -145,7 +217,7 @@
 						$("#create_instance_success").show();
 						print_instances();
 					});
-				print_instances();
+					print_instances();
 				});
 			});
 		</script>
@@ -183,19 +255,20 @@
 						<div class="page-header">
 							<h3>Instances <small>Manage private channels with your friends</small></h3>
 						</div>	
+						<div style="display:none" class="alert alert-error alert-block">
+							<a class="close" data-dismiss="alert" href="#">×</a>
+							<h4 class="alert-heading">Error</h4>
+						</div>
 						<div id="instances">
 						</div>
+						<div id="instancedetail"></div>
 						<div>
 							<div style="display:none" id="create_instance_success" class="alert alert-success">
 								The instance has been created.
 							</div>
-							<div id="create_users_note" class="alert alert-block alert-error">
-								<h4 class="alert-heading">No user keys available!</h4>
-								<p>
-								No user-key mapping is available. You'll need a map of your friends to their <strong>PGP</strong> Public Key.
-								<br/>Create a new mapping:  <a href="users.html"><i class="icon-user"></i><strong> Manage Users tab</strong></a>
-								</p>
-							</div>
+							<div class="topmargin page-header">
+								<h3>Add instance <small>Create a new channel</small></h3>
+							</div>	
 							<form id="create_instance" class="form form-horizontal">
 								<div class="control-group">
 									<label class="control-label" for="instance_name">Instance name</label>

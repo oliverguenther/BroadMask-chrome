@@ -190,7 +190,7 @@ Broadmask_Facebook.prototype.share = function () {
 			toupload.push(url);
 			if (toupload.length === thumbs.length) {
 				var message = that.armorData(toupload);
-				that.shareOnWall(message, [selected], function () {
+				that.shareOnWall(message, [selected], true, function () {
 					$("#status").append("Upload completed");
 				});
 			}
@@ -205,12 +205,16 @@ Broadmask_Facebook.prototype.share = function () {
 * @param allowed_users an array of allowed user ids or friendlist ids
 * @param callback Called when returned from upload
 */
-Broadmask_Facebook.prototype.shareOnWall = function (message, allowed_users, callback) {
+Broadmask_Facebook.prototype.shareOnWall = function (message, allowed_users, armoring, callback) {
 	"use strict";
 	// Post to Facebook wall using privacy set to this friendlistid
 	var data = {},
 	privacy = {value: 'CUSTOM', friends: 'SOME_FRIENDS', allow: allowed_users.join(",")};
-	data.message = this.armorData(message);
+	if (armoring) {
+		data.message = this.armorData(message);
+	} else {
+		data.message = message;
+	}
 	data.privacy = JSON.stringify(privacy);
 	this.sendFBData("https://graph.facebook.com/me/feed", data, callback);
 };
@@ -304,7 +308,7 @@ Broadmask_Facebook.prototype.updateCache = function (callback) {
 	delete localStorage.facebook_cache;
 	var cache = {},
 	that = this;
-	cache.expires = new Date().getTime() + 172800; // Expires in 2 days
+	cache.expires = new Date().getTime() + 172800000; // Expire in 2 days
 
 	that.updateFriends(function (friendsArr) {
 		cache.friends = friendsArr;
@@ -352,7 +356,7 @@ Broadmask_Facebook.prototype.checkCache = function (callback) {
 				}
 			} else {
 				var cache = {};
-				cache.expires = new Date().getTime() + 172800; // Expires in 2 days
+				cache.expires = new Date().getTime() + 172800000; // Expires in 2 days
 
 				that.updateFriends(function (friendsArr) {
 					cache.friends = friendsArr;

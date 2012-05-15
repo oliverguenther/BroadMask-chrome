@@ -49,9 +49,17 @@ html,body { background: #E7E7E7 }
 
 /** instances */
 .user_block {
+	background: #2A333B;
+	color: #FFF;
+	font-weight: bold;
 	float: left;
-	padding: 10px;
+	padding: 5px;
+	margin: 5px;
 	border: 1px solid #999;
+}
+
+.user_block.pgp_user {
+	background: #51A351;
 }
 
 /** uploaders */
@@ -120,3 +128,18 @@ progress {
 #pgp-form {
 	margin-top: 50px;
 }
+
+.selectedcol {
+	background: #fcc;
+}
+
+.modal {
+	word-break: break-all;
+}
+
+.topmargin {
+	margin-top: 100px;
+}
+
+
+

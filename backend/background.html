@@ -105,7 +105,7 @@
 
 
 				chrome.browserAction.onClicked.addListener(function() {
-					chrome.tabs.create({url: chrome.extension.getURL("frontend/app/updates.html")}, function(tab) {
+					chrome.tabs.create({url: chrome.extension.getURL("frontend/app/upload.html")}, function(tab) {
 						bmTabid = tab.id;
 						chrome.tabs.onRemoved.addListener(function () {
 							bmTabid = null;

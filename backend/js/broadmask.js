@@ -81,27 +81,22 @@ Broadmask.prototype.handleImages = function (groupid, urls, cb) {
 			return;
 		}
 
-		if (instance.type === 1) {
-			// BES_sender, this is your own data
-			cb({own_message: true, error:true, error_msg: "This is your own content. Currently, decrypting a BES message sent by yourself is not supported.\nSent with instance id: " + instance.id});
-		} else if (instance.type === 2 || instance.type === 4) {
-			// receiver or shared instane
-			// Download image
-			fetchfn(src, function (bmp_ct) {
-				if (bmp_ct.error || !bmp_ct.success) {
-					cb({error: true, error_msg: "Image Download failed:  " + bmp_ct.error});
-					return;
-				}
-				// decrypt content
-				var result = that.module.decrypt_b64(groupid, bmp_ct.result, true);
-				if (result.plaintext) {
-					callback(result.plaintext);
-				} else {
-					// probably an error, just return it directly
-					callback(result);
-				}
-			});
-		}
+		// receiver or shared instane
+		// Download image
+		fetchfn(src, function (bmp_ct) {
+			if (bmp_ct.error || !bmp_ct.success) {
+				cb({error: true, error_msg: "Image Download failed:  " + bmp_ct.error});
+				return;
+			}
+			// decrypt content
+			var result = that.module.decrypt_b64(groupid, bmp_ct.result, true);
+			if (result.plaintext) {
+				callback(result.plaintext);
+			} else {
+				// probably an error, just return it directly
+				callback(result);
+			}
+		});
 	}, cb);
 };
 
@@ -168,7 +163,7 @@ Broadmask.prototype.shareImages = function (groupid, images) {
 		receivers = bm.module.get_instance_members(groupid);
 
 		// Share as JSON string, base64 encoded
-		bm.osn.shareOnWall(btoa(JSON.stringify(share)), Object.keys(receivers), function() {
+		bm.osn.shareOnWall(btoa(JSON.stringify(share)), Object.keys(receivers), true, function() {
 			console.log("wee");
 		});
 

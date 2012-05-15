@@ -13,6 +13,18 @@ function hideErrors() {
 	$("#errors").empty();
 }
 
+function modal(par, id, header, body) {
+	var md = [];
+	md.push("<div class=\"modal fade\" id=\"modal" + id + "\">");
+	md.push('<div class="modal-header"><button class="close" data-dismiss="modal">×</button>');
+	md.push('<h3>' + header + '</h3></div><div class="modal-body">');
+	md.push(body);
+	md.push('</div>');
+	md.push('<div class="modal-footer"><a href="#" class="btn" data-dismiss="modal">Close</a></div></div>');
+	$(par).append(md.join(""));
+	$("#modal" + id).modal("show");
+}
+
 function userid2name(userid) {
 	"use strict";
 	var cache = chrome.extension.getBackgroundPage().broadmask.osn.cache();
