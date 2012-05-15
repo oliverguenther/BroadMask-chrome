@@ -14,23 +14,65 @@ function Broadmask() {
 			if (typeof request !== 'object') {
 				return;
 			}
+			
+			if (!request.hasOwnProperty("id")) {
+				console.error("Can't fetch a message without its id");
+				return;
+			}
 
-			if (request.message === 'decrypt') {
-				try {
-					var sharemsg = JSON.parse(atob(request.data));
-					if (sharemsg.message.links) {
+			that.osn.getFBData("https://graph.facebook.com/" + request.id, function (response) {
+				if (response.error || !response.hasOwnProperty("message")) {
+					console.error("Error fetching wall post: " + response.error.message);
+					return;
+				}
+				var fbmsg = response.message;
+				if (request.type === 'broadmask') {
+					// unpack
+					var bm_msg, 
+						start = fbmsg.indexOf("=== BEGIN BM DATA ===") + 22,
+						end = fbmsg.indexOf("=== END BM DATA ===") - 23;
+					
+					try {	
+						bm_msg = JSON.parse(atob(fbmsg.substr(start, end)));
+					} catch (e) {
+						console.error("Couldn't extract message from wall post: " + e);
+						return;
+					}
+					if (bm_msg.message.links) {
 						// Download, decrypt images
-						that.handleImages(sharemsg.gid, sharemsg.message.links, function (result) {
+						that.handleImages(bm_msg.gid, bm_msg.message.links, function (result) {
 							if (result.length > 0) {
 								result = {urls: result};
 							}
 							sendResponse(result);
 						});
 					}
-				} catch (e) {
-					console.error("Couldn't parse request payload " + request.data + ". Error was " + e);
+				} else if (request.type === 'pgp') {
+					// try to decrypt message
+					try {
+						var dec_msg = that.module.gpg_decrypt(fbmsg);
+						var msg = JSON.parse(dec_msg.message);
+						if (msg.type === "instance") {
+							// incoming instance, set it up
+							if (msg.instance_type === 1) {
+								// receiver instance {pk, sk}
+								that.module.create_receiver_instance(msg.id, "receiver", msg.max_users, msg.pk, msg.sk);
+								
+							} else if (msg.instance_type === 4) {
+								that.module.create_receiver_instance(msg.id, "receiver", msg.max_users, msg.pk, msg.sk);
+							} else {
+								console.warn("unknown instance type in " + fbmsg);
+							}
+						}
+					} catch (e) {
+						console.error("Couldn't parse message " + fbmsg + ". Error: " + e);
+					}
+
 				}
-			}
+				
+			});
+
+
 		}
 	);
 
@@ -52,17 +94,23 @@ Broadmask.prototype.handleImages = function (groupid, urls, cb) {
 
 	var processImages = function (array, fn, callback) {
 		var completed = 0,
+			error = false,
 			result = [];
 		if (array.length === 0) {
 			callback(result); // done immediately
 		}
-		for(var i = 0, len = array.length; i < len; i++) {
+		for(var i = 0, len = array.length; error == false && i < len; i++) {
 			var src = array[i];
-			fn(src, function(dataURL) {
-				result.push(dataURL);
-				completed++;
-				if(completed === array.length) {
+			fn(src, function(result) {
+				if (result.error) {
 					callback(result);
+					error = true;
+				} else if (result.content) {
+					result.push(result.content);
+					completed++;
+					if(completed === array.length) {
+						callback(result);
+					}
 				}
 			});
 		}
@@ -77,7 +125,7 @@ Broadmask.prototype.handleImages = function (groupid, urls, cb) {
 
 		if (instance.error) {
 			// instance doesn't exist
-			cb({error: true, error_msg: "No instance set up with groupid " + groupid});
+			callback({error: true, error_msg: "No instance set up with groupid " + groupid});
 			return;
 		}
 
@@ -85,16 +133,16 @@ Broadmask.prototype.handleImages = function (groupid, urls, cb) {
 		// Download image
 		fetchfn(src, function (bmp_ct) {
 			if (bmp_ct.error || !bmp_ct.success) {
-				cb({error: true, error_msg: "Image Download failed:  " + bmp_ct.error});
+				callback({error: false, warning: true, warn_msg: "Image Download failed:  " + bmp_ct.error});
 				return;
 			}
 			// decrypt content
 			var result = that.module.decrypt_b64(groupid, bmp_ct.result, true);
 			if (result.plaintext) {
-				callback(result.plaintext);
+				callback({error:false, content: result.plaintext});
 			} else {
 				// probably an error, just return it directly
-				callback(result);
+				callback({error:true, error_msg: result});
 			}
 		});
 	}, cb);

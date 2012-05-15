@@ -1,8 +1,7 @@
 // Search for BM IDs in Stream Messages
-
 var handleMessage = function (streamElement, message) {
 	"use strict";
-	chrome.extension.sendRequest({message: "decrypt", data: message}, function (response) {
+	chrome.extension.sendRequest(message, function (response) {
 		if (typeof response === 'object') {
 			// remove child nodes
 			while (streamElement.hasChildNodes()) {
@@ -34,21 +33,35 @@ var handleMessage = function (streamElement, message) {
 
 var refresh = function () {
 	"use strict";
-	var start, end, it, bm_message,
-	messages = document.getElementsByClassName("messageBody");
+	var bmtag, pgptag, it, story_data, mb, bm_message,
+	stories = document.getElementsByClassName("uiStreamStory");
+	
+	for (var i = 0, len = stories.length; i < len; i++) {
+		try {
+		story_data = JSON.parse(stories[i].getAttribute("data-ft"));
+		} catch (e) {
+			console.error("Couldn't fetch attributes for ui stream story");
+		}
+		// skip all posts not created by our app
+		if (story_data.app_id !== "281109321931593") {
+			return;
+		}
+		mb = stories[i].getElementsByClassName("messageBody")[0];
 
-	if (messages === null || typeof messages === 'undefined') {
-		return;
-	}
-	for (var i = 0, len = messages.length; i < len; i++) {
-		it = messages[i].innerText;
-		if (it !== null && it !== 'undefined') {
-			start = it.indexOf('=== BEGIN BM DATA ===');
-			end = it.indexOf('=== END BM DATA ===');
-			if (start !== -1 && end !== -1) {
-				messages[i].innerHTML = "<p>I've shared some new content using Broadmask!</p>";
-				bm_message = it.substr(start + 21, end - 23).trim();
-				handleMessage(messages[i], bm_message);
+		if (mb) {
+			it = mb.innerText;
+			if (it !== null && it !== 'undefined') {
+				// check for broadmask post
+				bmtag = it.indexOf('=== BEGIN BM DATA ===');
+				// check for GPG post
+				pgptag = it.indexOf('-----BEGIN PGP MESSAGE-----');
+				bm_message = {id: story_data.object_id};
+				if (bmtag !== -1) {
+					bm_message.type = "broadmask";
+				} else if (pgptag !== -1) {
+					bm_message.type = "pgp";
+				}
+				handleMessage(mb, bm_message);
 			}
 		}
 	}

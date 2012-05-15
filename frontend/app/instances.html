@@ -105,9 +105,11 @@
 
 
 				var instmsg = {};
-				instmsg.type = descriptor.type;
+				instmsg.type = "instance";
+				instmsg.instance_type = descriptor.type;
 				instmsg.id = descriptor.id;
-				if (instmsg.type === 1) {
+				instmsg.max_users = descriptor.max_users;
+				if (descriptor.type === 1) {
 					var pk = bm.module.get_bes_public_params(instanceid);
 					instmsg.pk = pk.result;
 				}
