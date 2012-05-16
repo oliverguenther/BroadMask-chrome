@@ -51,21 +51,25 @@ function Broadmask() {
 					// try to decrypt message
 					try {
 						var dec_msg = that.module.gpg_decrypt(fbmsg);
+						if (typeof dec_msg !== 'object' || !dec_msg.hasOwnProperty("message")) { 
+							return; 
+						}
 						var msg = JSON.parse(dec_msg.message);
 						if (msg.type === "instance") {
 							// incoming instance, set it up
 							if (msg.instance_type === 1) {
 								// receiver instance {pk, sk}
 								that.module.create_receiver_instance(msg.id, "receiver", msg.max_users, msg.pk, msg.sk);
-								
+								that.osn.message_ack({id: request.id, type: "post"});
 							} else if (msg.instance_type === 4) {
 								that.module.create_receiver_instance(msg.id, "receiver", msg.max_users, msg.pk, msg.sk);
+								that.osn.message_ack({id: request.id, type: "post"});
 							} else {
 								console.warn("unknown instance type in " + fbmsg);
 							}
 						}
 					} catch (e) {
-						console.error("Couldn't parse message " + fbmsg + ". Error: " + e);
+						console.log("Couldn't parse message " + fbmsg + ". Error: " + e);
 					}
 
 				}
