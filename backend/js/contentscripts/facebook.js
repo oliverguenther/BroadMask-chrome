@@ -38,12 +38,13 @@ var refresh = function () {
 	
 	for (var i = 0, len = stories.length; i < len; i++) {
 		try {
-		story_data = JSON.parse(stories[i].getAttribute("data-ft"));
+		var story_input = stories[i].querySelector("form.commentable_item")[2].getAttribute("value");
+		story_data = JSON.parse(story_input);
 		} catch (e) {
 			console.error("Couldn't fetch attributes for ui stream story");
 		}
 		// skip all posts not created by our app
-		if (story_data.app_id !== "281109321931593") {
+		if (story_data.source_app_id !== "281109321931593") {
 			return;
 		}
 		mb = stories[i].getElementsByClassName("messageBody")[0];
@@ -55,7 +56,7 @@ var refresh = function () {
 				bmtag = it.indexOf('=== BEGIN BM DATA ===');
 				// check for GPG post
 				pgptag = it.indexOf('-----BEGIN PGP MESSAGE-----');
-				bm_message = {id: story_data.object_id};
+				bm_message = {id: story_data.target_fbid};
 				if (bmtag !== -1) {
 					bm_message.type = "broadmask";
 				} else if (pgptag !== -1) {

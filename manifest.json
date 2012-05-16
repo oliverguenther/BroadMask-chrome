@@ -14,9 +14,8 @@
 	},
 	"content_scripts": [
     {
-      "matches": ["https://*.facebook.com/*"],
+      "matches": ["http://*.facebook.com/*", "https://*.facebook.com/*"],
       "js": [
-						"shared/jquery.min.js", 
 						"backend/js/contentscripts/facebook.js" 
 						]
     }

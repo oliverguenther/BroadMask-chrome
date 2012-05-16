@@ -60,6 +60,8 @@
 					"use strict";
 					if ($(this).attr("data-action") === "logout") {
 						broadmask.osn.revokeAuth();
+						delete localStorage.facebook_cache;
+						delete localStorage.fbauthorized;
 						$(this).val('Authorize');
 						$(this).removeClass('btn-danger').addClass('btn-success').attr("data-action", "login");
 					} else {
