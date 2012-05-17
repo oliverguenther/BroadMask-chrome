@@ -45,21 +45,30 @@
 				$.each(members, function (userid, pseudonym) {
 					rows.push("<tr id=\"" + userid + "\" data-type=\"detail\" data-instance=\"" + id + "\"><td>" + cache.friends[userid] + "</td>");
 					rows.push("<td>" + userid + "</td><td>");
-					rows.push("<a href=\"#\" class=\"showsk\" data-id=\"" + userid + "\"><i class=\"icon-lock\"></i> Show private key</a>");
 					if (typeof gpg_map === 'object' && gpg_map[userid]) {
-						rows.push("<br/><a href=\"javascript:upload_key('" + id + "','" + userid + "')\"><i class=\"icon-share\"></i> Publish (<small>PGP key: " + gpg_map[userid] + "</small>)</a>");
-					}	
+						rows.push("<a href=\"javascript:upload_key('" + id + "','" + userid + "')\"><i class=\"icon-share\"></i> Publish (<small>PGP key: " + gpg_map[userid] + "</small>)</a><br/>");
+						rows.push("<a href=\"#\" class=\"copysk_gpg\" data-id=\"" + userid + "\"><i class=\"icon-lock\"></i> Copy to clipboard (encrypted with PGP)</a></br><br/>");
+					}
+					rows.push("<a href=\"#\" class=\"copysk\" data-id=\"" + userid + "\"><i class=\"icon-warning-sign\"></i> Copy to clipboard (plaintext)</a>");
 					rows.push("</td></tr>");
 				});
 				if (rows.length > 0) {
 				$("#instancedetail").append('<h3>Instance members</h3><table class="table table-bordered table-striped"><thead><tr><th>Name</th><th>Id</th><th>Options</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
-				$(".showsk").click(function () {
+				$(".copysk").click(function () {
 					var userid = $(this).attr("data-id");
-					var cache = bm.osn.cache();
 					var instanceid = $(this).parent().parent().attr("data-instance");
-					var sk = bm.module.get_member_sk(instanceid, userid);
-					modal("#instancedetail", userid, "Private key for user " + userid, 
-					"<p>This is the private key for " + cache.friends[userid] + " (userid " + userid + "). Do not disclose this key to other members.</p><p> " + sk + "</p>");
+					var instmsg = get_instance_object(instanceid, userid);
+					bg.copyToClipboard(JSON.stringify(instmsg));	
+
+				});
+
+				$(".copysk_gpg").click(function () {
+					var userid = $(this).attr("data-id"),
+					instanceid = $(this).parent().parent().attr("data-instance"),
+					instmsg = get_instance_object(instanceid, userid),
+					enc_msg = bm.module.gpg_encrypt_for(JSON.stringify(instmsg), userid);
+
+					bg.copyToClipboard(JSON.stringify(enc_msg.encoded_data));	
 				});
 
 				}
@@ -99,10 +108,9 @@
 				}
 			}
 
-			function upload_key(instanceid, userid) {
+			function get_instance_object (instanceid, userid) {
 				var sk = bm.module.get_member_sk(instanceid, userid),
 				descriptor = bm.module.get_instance_descriptor(instanceid);
-
 
 				var instmsg = {};
 				instmsg.type = "instance";
@@ -114,6 +122,11 @@
 					instmsg.pk = pk.result;
 				}
 				instmsg.sk = sk;
+				return instmsg;
+			}
+
+			function upload_key(instanceid, userid) {
+				var instmsg = get_instance_object(instanceid, userid);
 
 				var enc_msg = bm.module.gpg_encrypt_for(JSON.stringify(instmsg), userid);
 				if (typeof enc_msg !== 'object') {

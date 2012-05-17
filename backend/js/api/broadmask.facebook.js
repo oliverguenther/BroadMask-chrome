@@ -175,7 +175,7 @@ Broadmask_Facebook.prototype.message_ack = function (message) {
 	if (message.type === 'post') {
 		// Like wall post as ACK
 		this.sendFBData("https://graph.facebook.com/" + message.id + "/likes", function (response) {
-			if (response !== true) {
+			if (response !== "true") {
 				console.warn("Couldn't ACK post " + message.id);
 			}
 		});

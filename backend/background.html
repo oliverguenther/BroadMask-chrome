@@ -34,6 +34,14 @@
 				return localStorage[key];
 			}
 
+			function copyToClipboard(text) {
+				var ct = document.getElementById("copyWrapper");
+				ct.value = text;
+				ct.focus();
+				ct.select();
+				document.execCommand("copy");
+			}
+
 			/** caches images for popup */
 			var unread = {}, 
 			badgecount = Object.size(unread),
@@ -117,6 +125,7 @@
 		<body>
 			<div id="broadmask_listener">
 			</div>
+			<input type="text" id="copyWrapper">
 		</body>
 	</body>
 </html>

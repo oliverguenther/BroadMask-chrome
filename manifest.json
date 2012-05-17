@@ -23,6 +23,7 @@
 	"default_locale": "en",
 	"permissions": [
 		"tabs",
+		"clipboardWrite",
 		"notifications",
 		"unlimitedStorage",
 		"https://*.google.com/*",
