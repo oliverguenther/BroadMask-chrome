@@ -16,7 +16,6 @@ function Broadmask() {
 			}
 			
 			if (!request.hasOwnProperty("id")) {
-				console.error("Can't fetch a message without its id");
 				return;
 			}
 
@@ -32,7 +31,7 @@ function Broadmask() {
 						start = fbmsg.indexOf("=== BEGIN BM DATA ===") + 22,
 						end = fbmsg.indexOf("=== END BM DATA ===") - 23;
 					
-					try {	
+					try {
 						bm_msg = JSON.parse(atob(fbmsg.substr(start, end)));
 					} catch (e) {
 						console.error("Couldn't extract message from wall post: " + e);
@@ -46,13 +45,19 @@ function Broadmask() {
 							}
 							sendResponse(result);
 						});
+					} else if (bm_msg.message.cts) {
+						that.decrypt(bm_msg.gid, bm_msg.message.cts, false, function (result) {
+							sendResponse(result);
+						});
+					} else {
+						console.warn("unknown message. " + JSON.stringify(bm_msg));
 					}
 				} else if (request.type === 'pgp') {
 					// try to decrypt message
 					try {
 						var dec_msg = that.module.gpg_decrypt(fbmsg);
-						if (typeof dec_msg !== 'object' || !dec_msg.hasOwnProperty("message")) { 
-							return; 
+						if (typeof dec_msg !== 'object' || !dec_msg.hasOwnProperty("message")) {
+							return;
 						}
 						var msg = JSON.parse(dec_msg.message);
 						if (msg.type === "instance") {
@@ -73,9 +78,7 @@ function Broadmask() {
 					}
 
 				}
-				
 			});
-
 
 		}
 	);
@@ -263,11 +266,21 @@ Broadmask.prototype.encrypt = function (groupid, data, asimage, callback) {
 	callback(cts);
 };
 
+Broadmask.prototype.armorData = function (message) {
+	"use strict";
+	var d = [];
+	d.push("=== BEGIN BM DATA ===");
+	d.push(message);
+	d.push("=== END BM DATA ===");
+	d.push("This message has been encrypted using Broadmask");
+	return d.join("\n");
+};
+
 /** Send request to unwrap image to BMP */
 Broadmask.prototype.decrypt = function (groupid, data, fromimage, callback) {
 	// TODO async
 	var pts = this.module.decrypt_b64(groupid, data, fromimage);
-	callback(cts);
+	callback(pts);
 };
 
 Broadmask.prototype.getKeyMap = function (callback) {

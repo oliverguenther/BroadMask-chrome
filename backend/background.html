@@ -42,42 +42,13 @@
 				document.execCommand("copy");
 			}
 
-			/** caches images for popup */
-			var unread = {}, 
-			badgecount = Object.size(unread),
-			bmTabid = null;
+			var bmTabid = null;
 
 
 			$(document).ready(function () {
 				// start NPAPI plugin
 				broadmask.run();
 			});
-
-			if (localStorage.unreadItems) {
-				unread = JSON.parse(localStorage.unreadItems);
-			}
-
-			function setRead(key) {
-				delete unread[key];
-				if (badgecount > 0) {
-					badgecount--;
-				}
-				localStorage.unreadItems = JSON.stringify(unread);
-				chrome.browserAction.setBadgeText({text: ""});
-			}
-
-			function newUnread(key, val) {
-				if (!key || !val) {
-					return;
-				}
-				if (!unread.hasOwnProperty(key)) {
-					badgecount++;
-				}
-				unread[key] = val;
-				localStorage.unreadItems = JSON.stringify(unread);
-				chrome.browserAction.setBadgeText({text: badgecount.toString()});
-				chrome.browserAction.setBadgeBackgroundColor({color: [118, 248, 123, 255]});
-			}
 
 			function pluginLoaded() {
 				broadmask.moduleDidLoad();
@@ -110,6 +81,23 @@
 				});
 			};
 
+			function handleMenuAction(cmdata, tab) {
+				chrome.tabs.create({url: chrome.extension.getURL("frontend/app/encrypt.html")}, function (bmtab) {
+					chrome.tabs.sendRequest(bmtab.id, {message: "encrypt", selection: cmdata.selectionText, tabid: tab.id});
+				});
+			}
+
+
+			var cmid = null;
+			chrome.contextMenus.removeAll(function () {
+				cmid = chrome.contextMenus.create({
+					title: "Encrypt with BroadMask",
+					contexts: ["selection"],
+					onclick: handleMenuAction,
+					documentUrlPatterns: ["http://*.facebook.com/*", "https://*.facebook.com/*"]
+				});
+			});
+			
 
 
 				chrome.browserAction.onClicked.addListener(function() {

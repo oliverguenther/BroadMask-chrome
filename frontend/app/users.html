@@ -54,6 +54,30 @@
 				}
 			}
 
+			function parsePGPkey(data) {
+				if (!data.hasOwnProperty("message")) {
+					return;
+				}
+				var keyid = data.message.toLowerCase().match(/0x[a-z0-9]+/i);
+				if (keyid[0]) {
+					$.get("http://pgp.mit.edu:11371/pks/lookup", {op : "get", search : keyid[0]}, function (response) {
+						var key_result = $(response).filter("pre");
+						if (key_result && key_result.length > 0) {
+							var result = bm.module.gpg_import_key(key_result[0].innerText, true);
+							if (!result || result.error) {
+								error("Could not import key. Error was: " + result.error_msg);
+							} else if (Object.size(result.imports) === 1) {
+								var imported_key = Object.pop(result.imports);
+								bm.module.gpg_store_keyid(data.actor_id.toString(), imported_key.fingerprint);
+								print_stored_map();
+							} else {
+									console.log("Found multiple keys for " + data.actor_id + ": " + JSON.stringify(result) + " . Insert mapping manually");
+							}
+						}
+					});
+				}
+			}
+
 			$(document).ready(function () {
 				print_stored_map();
 
@@ -117,7 +141,7 @@
 								print_stored_map();
 							} else {
 									return formError("#key_block", "Couldn't extract PGP-key. (Found " + Object.size(result.imports) + " keys). Paste one PGP-block only!");
-								}
+							}
 						}
 						return false;
 					});
@@ -127,18 +151,25 @@
 					typeaheadFriends();
 				} else {
 					// Check and update cache
-					chrome.extension.getBackgroundPage().broadmask.osn.checkCache(typeaheadFriends);
+					bm.osn.checkCache(typeaheadFriends);
 				}
 
 
 
 				// mapping refresh
 				$("#user_mapping_refresh").click(function () {
-					$(this).button('loading');
-					// TODO
-						setTimeout(function () {
-							$("#user_mapping_refresh").button('reset');
-						}, 2000);
+					$(this).button('loading');//AND app_id=281109321931593 
+					query = "SELECT post_id, actor_id, target_id, message FROM stream WHERE filter_key = 'others' AND strpos(lower(message), 'My PGP-Key:')"; //AND NOT actor_id=me()";
+					bm.osn.getFBData("https://api.facebook.com/method/fql.query?format=json&query=" + encodeURIComponent(query), function (data) {
+						if (data.length > 0) {
+							for (var i = 0, len = data.length; i < len; i++) {
+								parsePGPkey(data[i]);
+							}
+						} else {
+							console.log("No keys found.");
+							console.log(data);
+						}
+					});
 				});
 
 			});

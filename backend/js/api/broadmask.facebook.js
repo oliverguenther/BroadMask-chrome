@@ -99,7 +99,7 @@ Broadmask_Facebook.prototype.request_token = function (callback) {
 				}
 			}, tab);
 		});
-		chrome.tabs.create({'url': "https://www.facebook.com/dialog/oauth?client_id=" + that.app_id + "&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token&scope=publish_stream,create_note,read_friendlists"},
+		chrome.tabs.create({'url': "https://www.facebook.com/dialog/oauth?client_id=" + that.app_id + "&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token&scope=publish_stream,read_stream"},
 			null);
 	});
 };
@@ -190,7 +190,6 @@ Broadmask_Facebook.prototype.armorData = function (message) {
 	d.push("=== END BM DATA ===");
 	d.push("This message has been encrypted using Broadmask");
 	return d.join("\n");
-
 };
 
 Broadmask_Facebook.prototype.share = function () {

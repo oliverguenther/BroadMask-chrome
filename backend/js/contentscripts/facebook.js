@@ -1,3 +1,24 @@
+// Replace selection for text encryption
+function replaceSelection(newdata) {
+	"use strict";
+	var sel, range, node;
+
+	if (typeof window.getSelection !== "undefined") {
+		sel = window.getSelection();
+
+		// select the textfield
+		var textfield = sel.focusNode.firstElementChild;
+		textfield.value = newdata;
+	}
+}
+
+chrome.extension.onRequest.addListener(function (request, sender, responseCallback) {
+	if (request.message === "replaceSelection") {
+		replaceSelection(request.content);
+	}
+});
+
+
 // Search for BM IDs in Stream Messages
 var handleMessage = function (streamElement, message) {
 	"use strict";
@@ -44,9 +65,9 @@ var refresh = function () {
 			console.error("Couldn't fetch attributes for ui stream story");
 		}
 		// skip all posts not created by our app
-		if (story_data.source_app_id !== "281109321931593") {
-			return;
-		}
+		// if (story_data.source_app_id !== "281109321931593") {
+		// 	return;
+		// }
 		mb = stories[i].getElementsByClassName("messageBody")[0];
 
 		if (mb) {
@@ -69,5 +90,3 @@ var refresh = function () {
 };
 
 window.setTimeout("refresh()", 0);
-
-

@@ -3,6 +3,7 @@
 	"version": "0.1",
 	"description": "__MSG_title__",
 	"icons": { 
+		"16": "frontend/img/bm16.png",
 		"48": "frontend/img/bm48.png",
     "128": "frontend/img/bm128.png" 
 	},
@@ -23,11 +24,12 @@
 	"default_locale": "en",
 	"permissions": [
 		"tabs",
+    "contextMenus",
 		"clipboardWrite",
 		"notifications",
 		"unlimitedStorage",
 		"https://*.google.com/*",
 		"https://*.facebook.com/*",
-		"http://gpg-keyserver.de/pks/lookup/*"
+		"http://pgp.mit.edu:11371/pks/lookup*"
 	]
 }
