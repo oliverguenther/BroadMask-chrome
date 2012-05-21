@@ -18,12 +18,19 @@ function Broadmask_Facebook() {
 * Post a signed request to the Facebook Graph API
 *
 */
-Broadmask_Facebook.prototype.sendFBData = function (url, data, callback) {
+Broadmask_Facebook.prototype.sendFBData = function (url, params, callback) {
 	"use strict";
 	var token = localStorage.fbtoken;
 	if (typeof token !== "undefined") {
-		data.access_token = token;
-		$.post(url, data, callback);
+		params.access_token = token;
+		$.ajax({
+			"type": 'POST',
+			"url": url,
+			"dataType": "json",
+			"data": params
+		}).done(callback)
+		.fail(function(jqXHR, textStatus) { console.error( "Request failed: " + textStatus ); });
+		// $.ajax(url, {data: params, type: "POST", success: callback});
 		return true;
 	} else {
 		return false;
@@ -38,8 +45,7 @@ Broadmask_Facebook.prototype.sendFBDelete = function (url, callback) {
 	"use strict";
 	var token = localStorage.fbtoken;
 	if (typeof token !== "undefined") {
-		$.ajax(url + "?access_token=" + token, {type: "DELETE"})
-			.done(callback);
+		$.ajax(url, {data: {access_token: token}, type: "DELETE", success: callback});
 		return true;
 	} else {
 		return false;
@@ -124,8 +130,8 @@ Broadmask_Facebook.prototype.authorize = function (force_first_auth, callback) {
 	"use strict";
 
 	var that = this,
-		token = localStorage.fbtoken;
-	
+	token = localStorage.fbtoken;
+
 	// only perform first auth if forced
 	if (!token && force_first_auth) {
 		this.request_token();

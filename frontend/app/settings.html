@@ -57,7 +57,10 @@
 					$("#upload-key-btn").removeAttr("disabled")
 					.click(function() {
 						var keyid = "My PGP-Key: 0x" + $("#key-select").val();
-						bm.osn.sendFBData("https://graph.facebook.com/me/feed", {privacy : JSON.stringify({value: "ALL_FRIENDS"}), message : keyid});
+						bm.osn.sendFBData("https://graph.facebook.com/me/feed", {privacy : JSON.stringify({value: 'ALL_FRIENDS'}), message : keyid}, function (response) {
+							location.reload(true);
+						});
+						return false;
 					});
 				}
 				
@@ -75,8 +78,11 @@
 								$("#remove-key-btn").removeAttr("disabled").attr("data-posts", JSON.stringify(data))
 								.click(function () {
 										$.each(data, function(i, post) {
-											bm.osn.sendFBDelete("https://graph.facebook.com/" + post.post_id, function (response) {console.log(response);});
+											bm.osn.sendFBDelete("https://graph.facebook.com/" + post.post_id, function (response) { 
+												location.reload(true);
+											});
 										});
+										return false;
 								});
 								$("#btn_lookup_key").attr("data-postid", data[0].post_id)
 								.removeAttr("disabled")
