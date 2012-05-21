@@ -30,6 +30,22 @@ Broadmask_Facebook.prototype.sendFBData = function (url, data, callback) {
 	}
 };
 
+/** 
+* Send a signed HTTP DELETE request to the Facebook Graph API
+*
+*/
+Broadmask_Facebook.prototype.sendFBDelete = function (url, callback) {
+	"use strict";
+	var token = localStorage.fbtoken;
+	if (typeof token !== "undefined") {
+		$.ajax(url + "?access_token=" + token, {type: "DELETE"})
+			.done(callback);
+		return true;
+	} else {
+		return false;
+	}
+};
+
 /**
 * Retrieve a response a signed Facebook Graph API request.
 * */

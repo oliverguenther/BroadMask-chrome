@@ -13,11 +13,11 @@
 
 		<script type="text/javascript" charset="utf-8">
 			var bg = chrome.extension.getBackgroundPage();
-			var broadmask = bg.broadmask;
+			var bm = bg.broadmask;
 
 			function check_host_auth() {
 				$('#picasaauthbtn').val('loading');
-				broadmask.imgHost.is_authorized(function (auth_success) {
+				bm.imgHost.is_authorized(function (auth_success) {
 					if (auth_success === true) {
 						$('#picasaauthbtn').val('Revoke Authorization')
 						.removeClass('btn-success').addClass('btn-danger').attr("data-action", "logout");
@@ -30,7 +30,7 @@
 
 			function check_osn_auth() {
 				$('#facebookloginbtn').val('loading');
-				broadmask.osn.is_authorized(function (auth_success) {
+				bm.osn.is_authorized(function (auth_success) {
 					if (auth_success === true) {
 						$('#facebookloginbtn').val('Revoke Authorization')
 						.removeClass('btn-success').addClass('btn-danger').attr("data-action", "logout");	
@@ -45,27 +45,80 @@
 				check_host_auth();
 				check_osn_auth();
 
+
+				// Get private PGP keys
+				var keys = bm.module.gpg_search_keys("",1);
+				if (Object.size(keys) > 0) {
+					var options = [];
+					$.each(keys, function (id, keydata) {
+						options.push('<option value="' + id + '">' + keydata.name + ' (' + id + ')</option>');
+					});
+					$("#key-select").removeAttr("disabled").empty().append(options.join(""));
+					$("#upload-key-btn").removeAttr("disabled")
+					.click(function() {
+						var keyid = "My PGP-Key: 0x" + $("#key-select").val();
+						bm.osn.sendFBData("https://graph.facebook.com/me/feed", {privacy : JSON.stringify({value: "ALL_FRIENDS"}), message : keyid});
+					});
+				}
+				
+
+				// Check PGP keys from FB
+				var query = "SELECT post_id, actor_id, target_id, message FROM stream WHERE source_id = me() AND app_id = '281109321931593' AND strpos(lower(message), 'my pgp-key:') >= 0";
+				bm.osn.getFBData("https://graph.facebook.com/method/fql?q=" + encodeURIComponent(query), function (response) {
+					if (response.data.length > 0) {
+							var data = response.data;
+							var keyid = data[0].message.toLowerCase().match(/0x[a-z0-9]+/i)[0];
+							if (!keyid) { 
+								console.error("Found PGP key message, but couldn't parse content! " + data[0].message); 
+							} else {
+								$("#key-info").val(keyid);
+								$("#remove-key-btn").removeAttr("disabled").attr("data-posts", JSON.stringify(data))
+								.click(function () {
+										$.each(data, function(i, post) {
+											bm.osn.sendFBDelete("https://graph.facebook.com/" + post.post_id, function (response) {console.log(response);});
+										});
+								});
+								$("#btn_lookup_key").attr("data-postid", data[0].post_id)
+								.removeAttr("disabled")
+								.click(function() {
+									var post_id = $(this).attr("data-postid");
+									bm.osn.getFBData("https://graph.facebook.com/" + post_id, function(response) {
+										if (response.hasOwnProperty("actions")) {
+											chrome.tabs.create({url: response.actions[0].link});
+										} else {
+											error("Can't relocate to post with id " + post_id);
+										}
+									});
+								});
+
+							}
+					} else if (response.data.length === 0) {
+						$("#key-info").val("None published");
+					}
+				});
+				
+
 				$('#picasaauthbtn').click(function () {
 					"use strict";
 					if ($(this).attr("data-action") === "logout") {
-						broadmask.imgHost.revokeAuth();
+						bm.imgHost.revokeAuth();
 						$(this).val('Authorize');
 						$(this).removeClass('btn-danger').addClass('btn-success').attr("data-action", "login");
 					} else {
-						broadmask.imgHost.authorize(check_host_auth);
+						bm.imgHost.authorize(check_host_auth);
 					}
 				});
 
 				$('#facebookloginbtn').click(function () {
 					"use strict";
 					if ($(this).attr("data-action") === "logout") {
-						broadmask.osn.revokeAuth();
+						bm.osn.revokeAuth();
 						delete localStorage.facebook_cache;
 						delete localStorage.fbauthorized;
 						$(this).val('Authorize');
 						$(this).removeClass('btn-danger').addClass('btn-success').attr("data-action", "login");
 					} else {
-						broadmask.osn.authorize(true, check_osn_auth);
+						bm.osn.authorize(true, check_osn_auth);
 					}
 				});
 			});
@@ -101,6 +154,11 @@
 				</div>
 				<div id="app-content" class="span9">
 					<div class="content">
+						<div class="alert-message" id="errormsg" style="display:none">
+							<a class="close" href="javascript:hideErrors()">×</a>
+							<div id="errors">
+							</div>
+						</div>
 						<div id="authentication">
 							<div class="page-header">
 								<h3>Authentication <small>Image host / OSN authentication</small></h3>
@@ -131,14 +189,14 @@
 								<h3>PGP-Key <small>Upload your PGP fingerprint to Facebook</small></h3>
 							</div>
 							<p>
-							In order to exchange keys directly through Facebook in an automated fashion, you need to publish your PGP key identifier in your profile.<br/><span class="label label-inverse">Note</span> To create a PGP keypair, use the PGP distribution of your choice.
+							In order to exchange keys directly through Facebook in an automated fashion, you need to publish your PGP key identifier in your profile. To create a PGP keypair, use the GnuPGP keychain or the <em>gpg</em> console program.
 							</p>
 							<form id="pgp-form" class="form form-horizontal">
 								<fieldset>
 									<div class="control-group">
 										<label class="control-label" for="key-info">Currently published id</label>
 										<div class="controls">
-<input class="span3" id="key-info" size="24" readonly="readonly" value="None published" type="text"><button id="btn_lookup_key" class="btn btn-small" type="button" disabled>Show on Facebook</button>
+<input class="span3" id="key-info" size="24" readonly="readonly" value="Loading" type="text"><button id="btn_lookup_key" class="btn btn-small" type="button" disabled>Show on Facebook</button>
 											<p class="help-block light">
 												This is the currently published key identifier
 											</p>
@@ -149,11 +207,14 @@
 										<div class="controls">
 											<select id="key-select" disabled>
 											</select>
+												<p class="help-block light">
+												Select one of your private keys to share on Facebook.
+											</p>
 										</div>
 									</div>
 									<div class="form-actions">
-										<button id="upload-key-btn" class="btn btn-success" disabled><i class="icon-white icon-arrow-up"></i> Share fingerprint</button>
-										<button id="remove-key-btn"class="btn btn-inverse" disabled>Delete fingerprint</button>
+										<button id="upload-key-btn" class="btn btn-success" disabled><i class="icon-white icon-arrow-up"></i> Share on Facebook</button>
+										<button id="remove-key-btn"class="btn btn-inverse" disabled>Delete current id</button>
 									</div>
 								</fieldset>
 							</form>
