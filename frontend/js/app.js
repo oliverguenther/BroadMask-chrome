@@ -1,3 +1,34 @@
+/** Insert menu to id, highlight current page */
+function bmMenu(id, active) {
+	var root = document.getElementById(id),
+	mdata = [
+			{header: "Facebook"},
+			{key: "upload", icon: "icon-comment", content: "Share content"},
+			{key: "instances", icon: "icon-lock", content: "Manage instances"},
+			{key: "users", icon: "icon-user", content: "Manage users"},
+			"sep",
+			{header: "BroadMask"},
+			{key: "settings", icon: "icon-cog", content: "Settings"},
+			{key: "help", icon: "icon-question-sign", content: "Help"},
+			{key: "info", icon: "icon-info-sign", content: "About"}
+		];
+	menu = [];
+	for (var i = 0, len = mdata.length; i < len; i += 1) {
+		var entry = mdata[i];
+		if (entry === "sep") {
+			menu.push('<li class="divider"></li>');
+		} else if (entry.header) {
+			menu.push('<li class="nav-header">' + entry.header+ '</li>');
+		} else {
+			menu.push('<li ' + (active === entry.key ? 'class="active"' : '') + '>');
+			menu.push('<a href="' + entry.key + '.html"' + '><i class="' + (active === entry.key ? 'icon-white ' : '') + entry.icon + '"></i> ' + entry.content + '</a>');
+			menu.push('</li>');
+		}
+	}
+	root.innerHTML = menu.join("");
+}
+
+
 function error(msg) {
 	$("#errors").append("<p>" + msg + "</p>");
 	$("#errormsg").show();

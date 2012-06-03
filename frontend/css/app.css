@@ -75,6 +75,7 @@ progress {
 
 .thumb {
 	width: 120px;
+	height: 120px;
 	padding: 10px;
 	border: 1px solid #ddd;
 	margin-right: 20px;

@@ -54,33 +54,6 @@
 				broadmask.moduleDidLoad();
 			}
 
-			function getParameterByName(name, url) {
-				name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
-				var regexS = "[\\?&#]" + name + "=([^&#]*)";
-				var regex = new RegExp(regexS);
-				var results = regex.exec(url);
-				if(results == null)
-					return "";
-				else
-					return decodeURIComponent(results[1].replace(/\+/g, " "));
-			}
-
-			function onFacebookLogin(callback, bmTab) {
-				chrome.tabs.getAllInWindow(null, function(tabs) {
-					for (var i = 0; i < tabs.length; i++) {
-						if (tabs[i].url.indexOf("https://www.facebook.com/connect/login_success.html") == 0) {
-							var params = getParameterByName("access_token",tabs[i].url);
-							localStorage.fbtoken = params;
-							chrome.tabs.onUpdated.removeListener(onFacebookLogin);
-							chrome.tabs.remove(tabs[i].id);
-							callback();
-							chrome.tabs.update(bmTab.id, {active: true});
-							return;
-						}
-					}
-				});
-			};
-
 			function handleMenuAction(cmdata, tab) {
 				chrome.tabs.create({url: chrome.extension.getURL("frontend/app/encrypt.html")}, function (bmtab) {
 					chrome.tabs.sendRequest(bmtab.id, {message: "encrypt", selection: cmdata.selectionText, tabid: tab.id});

@@ -86,6 +86,7 @@
 					var friends = cached_friends();
 					if (Object.size(friends) === 0) {
 						disableForm("#create_user_map");
+						return;
 					}
 
 					var users_typeahead = [], 
@@ -183,24 +184,6 @@
 			<div class="row">
 				<div class="span3">
 					<ul id="navbar" class="nav nav-list">
-						<li class="nav-header">Facebook</li>
-						<li>
-						<a href="upload.html"><i class="icon-camera"></i> Upload photos</a>
-						</li>
-						<li>
-						<a href="instances.html"><i class="icon-lock"></i> Manage instances</a>
-						</li>
-						<li class="active">
-						<a href="users.html"><i class="icon-white icon-user"></i> Manage users</a>
-						</li>
-						<li class="nav-header">Broadmask</li>
-						<li>
-						<a href="settings.html"><i class="icon-cog"></i> Settings</a>
-						</li>
-						<li class="divider"></li>
-						<li>
-						<a href="about.html"><i class="icon-info-sign"></i> About</a>
-						</li>
 					</ul>
 				</div>	
 				<div id="app-content" class="span9">
@@ -262,4 +245,7 @@
 			</div>
 		</body>
 		<script src="../js/i18n.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" charset="utf-8">
+			bmMenu("navbar", "users");	
+		</script>
 	</html>

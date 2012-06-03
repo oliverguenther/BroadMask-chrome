@@ -218,48 +218,12 @@ Broadmask.prototype.shareImages = function (groupid, images) {
 		receivers = bm.module.get_instance_members(groupid);
 
 		// Share as JSON string, base64 encoded
-		bm.osn.shareOnWall(btoa(JSON.stringify(share)), Object.keys(receivers), true, function() {
-			console.log("wee");
-		});
+		bm.osn.shareOnWall(btoa(JSON.stringify(share)), Object.keys(receivers), true, function() {});
 
 	});
 };
 
 
-Broadmask.prototype.shareParams = function (groupid, content) {
-	"use strict";
-	if (!localStorage["system_" + scope]) {
-		var system = {},
-		sentkeys = [],
-		cursent = 0;
-		system.scope = scope;
-		system.pubkey = public_params;
-		system.pubkey_shared = false;
-		system.receivers = JSON.stringify(receivers);
-
-		var messages = [];
-		for (var i = 0; i < receivers.length; i += 1) {
-			var message = {},
-			content = {};	
-
-			content.message = privkeys[i];
-			content.privacy = {value: 'CUSTOM', friends: 'SOME_FRIENDS', allow: receivers[i]};
-
-
-			message.body = $.param(content);
-			message.relative_url = "me/feed";
-			message.method = "POST";
-			messages.push(message);
-		}
-
-		shareBatch(messages, function(result) {
-			console.log(result);
-		});
-
-	}
-};
-
-/** Send request to encrypt to BMP */
 Broadmask.prototype.encrypt = function (groupid, data, asimage, callback) {
 	// TODO async
 	var cts = this.module.encrypt_b64(groupid, data, asimage);

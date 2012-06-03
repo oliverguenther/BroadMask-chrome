@@ -1,22 +1,19 @@
 function Broadmask_Picasa() {
 	"use strict";
-	this.oauth = ChromeExOAuth.initBackgroundPage({
-		'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
-		'authorize_url': 'https://www.google.com/accounts/OAuthAuthorizeToken',
-		'access_url': 'https://www.google.com/accounts/OAuthGetAccessToken',
-		'consumer_key': 'anonymous',
-		'consumer_secret': 'anonymous',
-		'scope': 'https://picasaweb.google.com/data',
-		'app_name': 'BroadMask'
-	});
+	this.oauth = {
+		id: "179165421211.apps.googleusercontent.com",
+		secret: "Brwb_-o-gmfw89c0RldlGyhQ",
+		redirect: "urn:ietf:wg:oauth:2.0:oob",
+		scope: encodeURIComponent("https://picasaweb.google.com/data")
+	};
 
 	this.bg = chrome.extension.getBackgroundPage();
 	this.broadmask = this.bg.broadmask;
 	// Request storage with a max of 10mb
 	this.storage = new PermaFrost(10);
 
-	// Authorize
-	//this.performAuth(function () {});
+	// Check auth status
+	this.is_authorized(function () {});
 
 }
 
@@ -28,46 +25,55 @@ function Broadmask_Picasa() {
 */
 Broadmask_Picasa.prototype.uploadImage = function (b64bmp, progresscb, callback) {
 	"use strict";
-	// file is the wrapped BMP as string, base64 encoded 
-	var file = atob(b64bmp);
-	// we need to convert it to a blob
-	var bb = new window.WebKitBlobBuilder();
-	var byteArray = new Uint8Array(file.length);
-	for (var i = 0, len = file.length; i < len; i++) {
-		byteArray[i] = file.charCodeAt(i) & 0xff;
-	}
 
-	var builder = new (window.BlobBuilder || window.WebKitBlobBuilder)();
-	builder.append(byteArray.buffer);
-	var bmp = builder.getBlob("image/bmp");
-	var method = 'POST';
-	// TODO upload to default album - create album per friendlist instead
-	var url = 'https://picasaweb.google.com/data/feed/api/user/default/albumid/default';
-	var xhr = new XMLHttpRequest();
-	xhr.open(method, url, true);
-	xhr.setRequestHeader("GData-Version", '3.0');
-	xhr.setRequestHeader("Content-Type", "image/bmp");
-	xhr.setRequestHeader("Authorization", this.oauth.getAuthorizationHeader(url, method, ''));
-	// set progress handler
-	xhr.upload.onprogress = progresscb;
-	// xhr.upload.onprogress = function(e) {
-		// 	if (e.lengthComputable && progress !== null ) {
-			// 		progress.value = (e.loaded / e.total) * 100;
-			// 	}
-			// };
+	var that = this;
+	var performUpload = function () {
+		// file is the wrapped BMP as string, base64 encoded 
+		var file = atob(b64bmp);
+		// we need to convert it to a blob
+		var bb = new window.WebKitBlobBuilder();
+		var byteArray = new Uint8Array(file.length);
+		for (var i = 0, len = file.length; i < len; i++) {
+			byteArray[i] = file.charCodeAt(i) & 0xff;
+		}
 
-			var that = this;
-			xhr.onreadystatechange = function (data) {
-				if (xhr.readyState === 4) {
-					var url = xhr.getResponseHeader("Content-Location");
-					if (xhr.status === 201 && url != null) {
-						callback(xhr.status, url);
-					} else {
-						callback(xhr.status);
-					}
+		var builder = new (window.BlobBuilder || window.WebKitBlobBuilder)();
+		builder.append(byteArray.buffer);
+		var bmp = builder.getBlob("image/bmp");
+		var method = 'POST';
+		// TODO upload to default album - create album per friendlist instead
+		var url = 'https://picasaweb.google.com/data/feed/api/user/default/albumid/default';
+		var xhr = new XMLHttpRequest();
+		xhr.open(method, url, true);
+		xhr.setRequestHeader("GData-Version", '3.0');
+		xhr.setRequestHeader("Content-Type", "image/bmp");
+
+		var access_token = JSON.parse(localStorage.oauth_picasa).access_token;
+		xhr.setRequestHeader("Authorization", "Bearer " + access_token);
+		// set progress handler
+		xhr.upload.onprogress = progresscb;
+
+		xhr.onreadystatechange = function (data) {
+			if (xhr.readyState === 4) {
+				var url = xhr.getResponseHeader("Content-Location");
+				if (xhr.status === 201 && url != null) {
+					callback(xhr.status, url);
+				} else {
+					callback(xhr.status);
 				}
-			};
-			xhr.send(bmp);
+			}
+		};
+		xhr.send(bmp);
+	};
+
+	// check auth status
+	this.is_authorized(function (authstate) {
+		if (authstate) {
+			performUpload();
+		} else {
+			callback("Picasa authorization failure");
+		}
+	});
 };
 
 /** 
@@ -152,17 +158,109 @@ Broadmask_Picasa.prototype.handleResponse = function (xhr) {
 	} else {
 		error("Content-Location header was empty! XHR status was " + xhr.status);
 	}
-
 };
 
 Broadmask_Picasa.prototype.authorize = function (callback) {
-	this.oauth.authorize(callback);
+	"use strict";
+	var that = this;
+	var retrieveToken = function (authcode) {
+		// Request access token
+		$.ajax({
+			"type": 'POST',
+			"url": "https://accounts.google.com/o/oauth2/token",
+			"dataType": "json",
+			"data": {
+				code: authcode, 
+				client_id: that.oauth.id, 
+				client_secret: that.oauth.secret,
+				redirect_uri: "urn:ietf:wg:oauth:2.0:oob",
+				grant_type: "authorization_code"
+			}
+		}).done(function(tokeninfo) {
+			var now = new Date();
+			now.setSeconds(now.getSeconds() + tokeninfo.expires_in);
+			tokeninfo.expires_in = now.getTime();
+			localStorage.oauth_picasa = JSON.stringify(tokeninfo);
+		})
+		.fail(function(jqXHR, textStatus) { console.error( "Request failed: " + textStatus ); });	
+	};
+
+	var grabToken = function (oldTab) {
+		var listener = this;
+		chrome.tabs.getAllInWindow(null, function (tabs) {
+			for (var i = 0; i < tabs.length; i++) {
+				if (tabs[i].title.indexOf("Success code") === 0 && 
+				tabs[i].url.indexOf("https://accounts.google.com/o/oauth2/approval") === 0) {
+
+					var title = tabs[i].title;
+					var authcode = title.substr(title.indexOf("=") + 1);
+					// remove Tab
+					chrome.tabs.onUpdated.removeListener(listener);
+					chrome.tabs.remove(tabs[i].id);
+
+					// retrieve token
+					retrieveToken(authcode);
+
+					// return to previous tab
+					chrome.tabs.update(oldTab.id, {active: true});
+					break;
+				}
+			}
+		});
+	};
+
+	chrome.tabs.getCurrent(function (activeTab) {
+		chrome.tabs.onUpdated.addListener(function () { grabToken(activeTab); });
+	});
+	chrome.tabs.create({'url': "https://accounts.google.com/o/oauth2/auth?client_id=" + that.oauth.id + "&redirect_uri=urn:ietf:wg:oauth:2.0:oob&response_type=code&scope=" + that.oauth.scope});
 };
 
 Broadmask_Picasa.prototype.revokeAuth = function () {
-	this.oauth.clearTokens();
+	delete localStorage.picasa_oauth;
 };
 
 Broadmask_Picasa.prototype.is_authorized = function (callback) {
-	callback(this.oauth.hasToken());
+	var that = this;
+	var tokeninfo = {};
+
+	if (!localStorage.oauth_picasa) {
+		callback(false);
+	}
+
+	try {
+		tokeninfo = JSON.parse(localStorage.oauth_picasa);
+	} catch (e) {
+		console.warn("Error parsing token. "  + e);
+		delete localStorage.oauth_picasa;
+		callback(false);
+	}
+
+	if (tokeninfo.access_token && tokeninfo.refresh_token) {
+		if (new Date(tokeninfo.expires_in).getTime() > new Date().getTime()) {
+			callback(true);
+		} else {
+			// get refresh token
+			$.ajax({
+				"type": 'POST',
+				"url": "https://accounts.google.com/o/oauth2/token",
+				"dataType": "json",
+				"data": {
+					refresh_token: tokeninfo.refresh_token, 
+					client_id: that.oauth.id, 
+					client_secret: that.oauth.secret,
+					grant_type: "refresh_token"
+				}
+			}).done(function(fresh_token) {
+				var now = new Date();
+				now.setSeconds(now.getSeconds() + fresh_token.expires_in);
+				tokeninfo.expires_in = now.getTime();
+				tokeninfo.access_token = fresh_token.access_token;
+				localStorage.oauth_picasa = JSON.stringify(tokeninfo);
+				callback(true);
+			})
+			.fail(function(jqXHR, textStatus) { console.error( "Couldn't refresh status" + textStatus ); callback(false); });	
+		}
+	} else {
+		callback(false);
+	}
 };

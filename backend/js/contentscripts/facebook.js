@@ -29,18 +29,29 @@ var handleMessage = function (streamElement, message) {
 				streamElement.removeChild(streamElement.lastChild);
 			}
 			if (response.urls) {
-				// image urls, display them
+				// data urls, display them
 				for (var i = 0, len = response.urls.length; i < len; i += 1) {
-					var img = document.createElement("img"),
+					if (response.urls[i].indexOf("data:image/") !== -1) {
+						// display as image
+						var img = document.createElement("img"),
+							full = document.createElement("a");
+						img.src = response.urls[i];
+						full.href = response.urls[i];
+						img.style.width = "150px";
+						img.style.border = "1px solid #ccc";
+						img.style.padding = "5px";
+						full.appendChild(img);
+						streamElement.appendChild(full);
+					} else {
+						// Display as link
+						// Extract data url
+						var mimeTypeEnd = response.urls[i].indexOf(";"),
+						mimetype = response.urls[i].substr(0, mimeTypeEnd),
 						full = document.createElement("a");
-					img.src = response.urls[i];
-					full.href = response.urls[i];
-					img.style.width = "150px";
-					img.style.border = "1px solid #ccc";
-					img.style.padding = "5px";
-
-					full.appendChild(img);
-					streamElement.appendChild(full);
+						full.href = response.urls[i];
+						full.innerText = "Click to view content (Mimetype: " + mimetype + ").";
+						streamElement.appendChild(full);
+					}
 
 				}
 			} else if (response.plaintext) {

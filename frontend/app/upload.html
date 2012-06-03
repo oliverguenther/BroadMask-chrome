@@ -30,6 +30,24 @@
 			}
 
 
+			function previewFileType(f, data) {
+				var thumb = [];
+				if (f.type.match("image.*")) {
+					thumb.push('<img class="thumb" src="');
+					thumb.push(data);
+					thumb.push('" title="');
+					thumb.push(f.name);
+					thumb.push('"/>');
+				} else {
+					thumb.push('<div class="thumb" src="');
+					thumb.push(data);
+					thumb.push('"><strong>');
+					thumb.push(f.type + "</strong><br/>" + f.name);
+					thumb.push('</div>');
+				}
+				return thumb.join("");
+			}
+
 			/*
 			* Handle user files, and upload them to the image hoster
 			* @param files an array of files
@@ -48,11 +66,9 @@
 						var thumb = [];
 						thumb.push('<div id="');
 						thumb.push(imgid);
-						thumb.push('" class="uploadprogress"><div class="picasa-thumbwrapper"><img class="thumb" src="');
-						thumb.push(e.target.result);
-						thumb.push('" title="');
-						thumb.push(theFile.name);
-						thumb.push('"/></div></div>');
+						thumb.push('" class="uploadprogress"><div class="picasa-thumbwrapper">');
+						thumb.push(previewFileType(theFile, e.target.result));
+						thumb.push('</div></div>');
 						$("#files-preview").append(thumb.join(''));
 						imgid++;
 					};
@@ -61,8 +77,12 @@
 				for (i = 0; i < len; i = i + 1) {
 					f = files[i];
 					reader = new FileReader();
-					// Only process image files.
-					if (f.type.match('image.*')) {
+					if (f.size > 10000000) {
+						error('The file <strong>' + escape(f.name) + '</strong> is too large to upload. Select a smaller file');
+						return;
+					}
+
+					if (f.type.match("(image.*|video.*|audio.*)")) {
 						reader.onload = initRead(f);
 						reader.onloadend = function () {
 							if ($(".uploadprogress").length > 0) {
@@ -70,9 +90,10 @@
 							}
 						};
 						reader.readAsDataURL(f);
+					} else {
+						error('The file <strong>' + escape(f.name) + '</strong> does not match any allowed file type (image/*, video/*, audio/*). Detected type: "' + f.type + '"');
 					}
 				}
-
 
 			};
 
@@ -104,7 +125,7 @@
 						progress = document.createElement("progress");
 						progress.value = 0;
 						progress.max = 100;
-						image.src = this.src;
+						image.src = this.getAttribute("src");
 
 						image.onprogress = function (e) {
 							if (e.lengthComputable && progress !== null ) {
@@ -155,7 +176,7 @@
 					$("#share-select").append(options.join(""));
 
 					/** setup event listeners */
-					var dropbox = document.getElementById("files-dropzone"),
+					var dropbox = document.getElementById("message"),
 					filepicker = document.getElementById("files-picker");
 					dropbox.addEventListener('dragover', fileInputs, false);
 					dropbox.addEventListener('drop', fileInputs, false);
@@ -175,34 +196,17 @@
 			<div class="row">
 				<div class="span3">
 					<ul id="navbar" class="nav nav-list">
-						<li class="nav-header">Facebook</li>
-						<li class="active">
-						<a href="upload.html"><i class="icon-white icon-camera"></i> Upload photos</a>
-						</li>
-						<li>
-						<a href="instances.html"><i class="icon-lock"></i> Manage instances</a>
-						</li>
-						<li>
-						<a href="users.html"><i class="icon-user"></i> Manage users</a>
-						</li>
-						<li class="nav-header">Broadmask</li>
-						<li>
-						<a href="settings.html"><i class="icon-cog"></i> Settings</a>
-						</li>
-						<li class="divider"></li>
-						<li>
-						<a href="about.html"><i class="icon-info-sign"></i> About</a>
-						</li>
 					</ul>
 				</div>	
 				<div id="app-content" class="span9">
 					<div class="content">
-						<div class="alert-message" id="errormsg" style="display:none">
+						<div class="alert alert-error" id="errormsg" style="display:none">
+							<h4 class="alert-heading">Error!</h4>
 							<div id="errors">
 							</div>
 						</div>
 						<div class="page-header">
-							<h3>Upload photos <small> Share new photos with your group</small></h3>
+							<h3>Upload content <small> Share messages and media with your friends</small></h3>
 						</div>	
 						<div id="create_users_note" class="alert alert-block alert-error">
 							<h4 class="alert-heading">No communication groups found</h4>
@@ -210,37 +214,59 @@
 							No group instances have been defined. <a href="instances.html">Create a new instance</a>
 							</p>
 						</div>
-						<div id="picasa">
-							<form id="share-form" class="form-horizontal">
-								<div class="filepicker"><input id="files-picker" type="file" multiple=""></div>
-								<div id="files-dropzone" class="dropzone">or drop some files here!</div>
-								<hr>
-								<div class="control-group">
-									<label class="control-label" for="share-select">Share with</label>
-									<div class="controls">
-										<select id="share-select" disabled>
-										</select>
-									</div>
+						<form id="share-form" class="form-horizontal">
+							<div class="control-group">
+								<label class="control-label" for="message">Text message</label>
+								<div class="controls">
+									<textarea class="span6" id="message" rows="6"></textarea>
+									<p class="help-block light">
+										Use the text input above to enter a private message you wish to share with the group selected below (See <em>Share with</em>).
+										Use <strong>Drag and Drop</strong> to add media (images, video or audio) to the message &mdash; or use the file input below, and note that You cannot share files larger than 10 MB!
+									<p/>
+										<div style="display: none" class="no_picasaauth_info alert alert-error">
+											<strong>Note:</strong> Adding media requires an active Picasa WebAlbums account. <a href="settings.html">Authorize BroadMask to use your account!</a>
+										</div>
 								</div>
-								<div class="control-group error">
-									<label class="control-label" for="share-select">Share to group only</label>
-									<div class="controls">
-										<input type="checkbox" id="optionsCheckbox" value="option1">
-										<p class="help-block light">
-										<span class="label label-important">Important!</span> Checking this will set the Facebook wall post privacy controls to all recipients you added! This will result in Facebook gaining knowledge about the members of your instance! <a href="#">Click here to learn more</a>.
-									</div>
+							</div>
+							<div class="control-group">
+								<label class="control-label" for="fileInput">Add media</label>
+								<div class="controls">
+									<input class="input-file" id="files-picker" type="file" multiple>
+									<p class="help-block light">
+										Select some media files you wish to add to this message. See above for further details
+									</p>
 								</div>
-								<div id="sharestatus"></div>
-								<div class="form-actions">
-									<button id="share-submit-btn" class="btn btn-success" disabled><i class="icon-white icon-arrow-up"></i> Share content</button>
-									<button id="share-reset-btn"class="btn" disabled>Delete batch</button>
+							</div>
+							<hr>
+							<div class="control-group">
+								<label class="control-label" for="share-select">Share with</label>
+								<div class="controls">
+									<select id="share-select" disabled>
+									</select>
 								</div>
-							</form>
-							<div id="files-preview"></div>
-						</div>
+							</div>
+							<div class="control-group error">
+								<label class="control-label" for="share-select">Share to group only</label>
+								<div class="controls">
+									<input type="checkbox" id="optionsCheckbox" value="option1">
+									<p class="help-block light">
+									<span class="label label-important">Important!</span> Checking this will set the Facebook wall post privacy controls to all recipients you added! This will result in Facebook gaining knowledge about the members of your instance! <a href="#">Click here to learn more</a>.
+								</div>
+							</div>
+							<div id="sharestatus"></div>
+							<div class="form-actions">
+								<button id="share-submit-btn" class="btn btn-success" disabled><i class="icon-white icon-arrow-up"></i> Share content</button>
+								<button id="share-reset-btn"class="btn" disabled>Delete batch</button>
+							</div>
+						</form>
+						<div id="files-preview"></div>
 					</div>
 				</div>
 			</div>
-		</body>
-		<script src="../js/i18n.js" type="text/javascript" charset="utf-8"></script>
-	</html>
+		</div>
+	</body>
+	<script src="../js/i18n.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript" charset="utf-8">
+		bmMenu("navbar", "upload");	
+	</script>
+</html>

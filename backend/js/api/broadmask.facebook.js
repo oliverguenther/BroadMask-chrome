@@ -111,16 +111,39 @@ Broadmask_Facebook.prototype.is_authorized = function (callback) {
 Broadmask_Facebook.prototype.request_token = function (callback) {
 	"use strict";
 	var that = this;
-	delete localStorage.fbtoken;
-	chrome.tabs.getCurrent(function (tab) {
-		chrome.tabs.onUpdated.addListener(function () {
-			chrome.extension.getBackgroundPage().onFacebookLogin(function () {
-				that.checkCache();
-				if (typeof callback === 'function') {
-					callback();
+	var getParameterByName = function (name, url) {
+		name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+		var regexS = "[\\?&#]" + name + "=([^&#]*)";
+		var regex = new RegExp(regexS);
+		var results = regex.exec(url);
+		if (results === null) {
+			return "";
+		} else {
+			return decodeURIComponent(results[1].replace(/\+/g, " "));
+		}
+	};
+	var grabToken = function (oldTab) {
+		var listener = this;
+		chrome.tabs.getAllInWindow(null, function (tabs) {
+			for (var i = 0; i < tabs.length; i++) {
+				if (tabs[i].url.indexOf("https://www.facebook.com/connect/login_success.html") == 0) {
+					var params = getParameterByName("access_token",tabs[i].url);
+					localStorage.fbtoken = params;
+					// remove Tab
+					chrome.tabs.onUpdated.removeListener(listener);
+					chrome.tabs.remove(tabs[i].id);
+					that.checkCache();
+					// return to previous tab
+					chrome.tabs.update(oldTab.id, {active: true});
+					break;
 				}
-			}, tab);
+			}
 		});
+	}
+
+	delete localStorage.fbtoken;
+	chrome.tabs.getCurrent(function (activeTab) {
+		chrome.tabs.onUpdated.addListener(function () { grabToken(activeTab); });
 		chrome.tabs.create({'url': "https://www.facebook.com/dialog/oauth?client_id=" + that.app_id + "&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token&scope=publish_stream,read_stream"},
 			null);
 	});
