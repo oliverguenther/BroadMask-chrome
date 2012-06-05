@@ -119,6 +119,7 @@
 
 				$('#share-submit-btn').click(function () {
 					var images = [],
+					plaintext = $("#message").val(),
 					groupid = $("#share-select").val();
 					$(".thumb").each(function() {
 						var image = {}, 
@@ -151,7 +152,17 @@
 
 						images.push(image);
 					});
-					bm.shareImages(groupid, images);
+
+					var message = {};
+					if (images.length > 0) {
+						message.media = images;
+					}
+
+					if (plaintext) {
+						message.plaintext = plaintext;
+					}
+
+					bm.share(groupid, message);
 					return false;
 				});
 

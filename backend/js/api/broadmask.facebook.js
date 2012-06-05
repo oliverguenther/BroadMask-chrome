@@ -29,7 +29,7 @@ Broadmask_Facebook.prototype.sendFBData = function (url, params, callback) {
 			"dataType": "json",
 			"data": params
 		}).done(callback)
-		.fail(function(jqXHR, textStatus) { console.error( "Request failed: " + textStatus ); });
+		.fail(function(jqXHR, textStatus) { console.error("Request failed: " + textStatus); });
 		// $.ajax(url, {data: params, type: "POST", success: callback});
 		return true;
 	} else {

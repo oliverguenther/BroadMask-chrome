@@ -9,81 +9,105 @@ function Broadmask() {
 
 	// Register as handler for incoming message requests
 	var that = this;
-	chrome.extension.onRequest.addListener(
-		function (request, sender, sendResponse) {
-			if (typeof request !== 'object') {
-				return;
-			}
-			
-			if (!request.hasOwnProperty("id")) {
-				return;
-			}
-
-			that.osn.getFBData("https://graph.facebook.com/" + request.id, function (response) {
-				if (response.error || !response.hasOwnProperty("message")) {
-					console.error("Error fetching wall post: " + response.error.message);
-					return;
-				}
-				var fbmsg = response.message;
-				if (request.type === 'broadmask') {
-					// unpack
-					var bm_msg, 
-						start = fbmsg.indexOf("=== BEGIN BM DATA ===") + 22,
-						end = fbmsg.indexOf("=== END BM DATA ===") - 23;
-					
-					try {
-						bm_msg = JSON.parse(atob(fbmsg.substr(start, end)));
-					} catch (e) {
-						console.error("Couldn't extract message from wall post: " + e);
-						return;
-					}
-					if (bm_msg.message.links) {
-						// Download, decrypt images
-						that.handleImages(bm_msg.gid, bm_msg.message.links, function (result) {
-							if (result.length > 0) {
-								result = {urls: result};
-							}
-							sendResponse(result);
-						});
-					} else if (bm_msg.message.cts) {
-						that.decrypt(bm_msg.gid, bm_msg.message.cts, false, function (result) {
-							sendResponse(result);
-						});
-					} else {
-						console.warn("unknown message. " + JSON.stringify(bm_msg));
-					}
-				} else if (request.type === 'pgp') {
-					// try to decrypt message
-					try {
-						var dec_msg = that.module.gpg_decrypt(fbmsg);
-						if (typeof dec_msg !== 'object' || !dec_msg.hasOwnProperty("message")) {
-							return;
-						}
-						var msg = JSON.parse(dec_msg.message);
-						if (msg.type === "instance") {
-							// incoming instance, set it up
-							if (msg.instance_type === 1) {
-								// receiver instance {pk, sk}
-								that.module.create_receiver_instance(msg.id, "receiver", msg.max_users, msg.pk, msg.sk);
-								that.osn.message_ack({id: request.id, type: "post"});
-							} else if (msg.instance_type === 4) {
-								that.module.create_receiver_instance(msg.id, "receiver", msg.max_users, msg.pk, msg.sk);
-								that.osn.message_ack({id: request.id, type: "post"});
-							} else {
-								console.warn("unknown instance type in " + fbmsg);
-							}
-						}
-					} catch (e) {
-						console.log("Couldn't parse message " + fbmsg + ". Error: " + e);
-					}
-
-				}
-			});
-
-		}
-	);
+	chrome.extension.onConnect.addListener(this.onCSConnection.bind(this));
 
 }
+
+
+
+Broadmask.prototype.onCSConnection = function (port) {
+	if (port.name !== "fbcontentscript") {
+		return;
+	}
+	var that = this;
+
+
+	var handleContent = function (message) {
+		var bm_msg,
+		start = message.indexOf("=== BEGIN BM DATA ===") + 22,
+		end = message.indexOf("=== END BM DATA ===") - 23;
+
+		try {
+			bm_msg = JSON.parse(atob(message.substr(start, end)));
+		} catch (e) {
+			console.error("Couldn't extract message from wall post: " + e);
+			return;
+		}
+		if (!bm_msg.hasOwnProperty("data")) {
+			port.postMessage({error: true, error_msg: "No message content found in message"});
+			console.warn("No message countent found in: " + JSON.stringify(bm_msg));
+		}
+		if (bm_msg.data.text_message) {
+			// Decrypt inline text
+			that.decrypt(bm_msg.gid, bm_msg.data.text_message, false, function (result) {
+				port.postMessage(result);
+			});
+		}
+		if (bm_msg.data.links) {
+			// Download, decrypt images
+			that.handleImages(bm_msg.gid, bm_msg.data.links, function (result) {
+				if (result.length > 0) {
+					result = {urls: result};
+				}
+				port.postMessage(result);
+			});
+		} else {
+			port.postMessage({error: true, error_msg: "Unknown message"});
+			console.warn("unknown message. " + JSON.stringify(bm_msg));
+		}
+
+	};
+
+	var handleKeyTransmission = function (message) {
+		try {
+			var dec_msg = that.module.gpg_decrypt(message);
+			if (typeof dec_msg !== 'object' || !dec_msg.hasOwnProperty("message")) {
+				return;
+			}
+			var msg = JSON.parse(dec_msg.message);
+			if (msg.type === "instance") {
+				// incoming instance, set it up
+				if (msg.instance_type === 1) {
+					// receiver instance {pk, sk}
+					that.module.create_receiver_instance(msg.id, "receiver", msg.max_users, msg.pk, msg.sk);
+					that.osn.message_ack({id: request.id, type: "post"});
+				} else if (msg.instance_type === 4) {
+					that.module.create_receiver_instance(msg.id, "receiver", msg.max_users, msg.pk, msg.sk);
+					that.osn.message_ack({id: request.id, type: "post"});
+				} else {
+					console.warn("unknown instance type in " + fbmsg);
+				}
+			}
+		} catch (e) {
+			console.log("Couldn't parse message " + fbmsg + ". Error: " + e);
+		}
+	};
+
+	// handle incoming messages
+	port.onMessage.addListener(function (request) {
+		if (typeof request !== 'object') {
+			return;
+		}
+
+		if (!request.hasOwnProperty("id")) {
+			return;
+		}	
+
+		// fetch UIStreamMessage
+		that.osn.getFBData("https://graph.facebook.com/" + request.id, function (response) {
+			if (response.error || !response.hasOwnProperty("message")) {
+				console.error("Error fetching wall post: " + response.error.message);
+				return;
+			}
+			var fbmsg = response.message;
+			if (request.type === 'broadmask') {
+				handleContent(response.message);
+			} else if (request.type === 'pgp') {
+				handleKeyTransmission(response.message);
+			}
+		});
+	});
+};
 
 
 /**
@@ -101,8 +125,8 @@ Broadmask.prototype.handleImages = function (groupid, urls, cb) {
 
 	var processImages = function (array, fn, callback) {
 		var completed = 0,
-			error = false,
-			result = [];
+		error = false,
+		result = [];
 		if (array.length === 0) {
 			callback(result); // done immediately
 		}
@@ -180,18 +204,19 @@ Broadmask.prototype.asyncLoop = function (array, fn, callback) {
 };
 
 /**
-* Share the images to the defined group instance
+* Share a message (containing plaintext or/and media) to the given group instance
 * @param groupid The group instance id
-* @param images array of object 
+* @param message an object containing 'plaintext' key for raw text, or an array of image objects with the following structure
 * {src: 'image data url', onprogress: 'onprogress callback function', success: 'success callback', error: 'error callback'}
 */
-Broadmask.prototype.shareImages = function (groupid, images) {
+Broadmask.prototype.share = function (groupid, message) {
 	var bm = this;
 
 	var processImage = function (img, processcb) {
 		bm.encrypt(groupid, img.src, true, function (ct_wrapped) {
 			if (typeof ct_wrapped !== 'object' || !ct_wrapped.ciphertext) {
 				img.error("Encryption failed " + (ct_wrapped.error ? ct_wrapped.error_msg : 'with unknown error.'));
+				return;
 			}
 			// upload content
 			bm.imgHost.uploadImage(ct_wrapped.ciphertext, img.onprogress, function(xhr, url) {
@@ -205,24 +230,64 @@ Broadmask.prototype.shareImages = function (groupid, images) {
 		});	
 	};
 
+	var encryptText = function(message, callback) {
+		bm.encrypt(groupid, message.plaintext, false, function (result) {
+			if (typeof result !== 'object' || !result.ciphertext) {
+				error("Encryption failed " + (result.error ? result.error_msg : 'with unknown error.'));
+			} else {
+				callback(result.ciphertext);
+			}
+		});
+	};
 
-	this.asyncLoop(images, processImage, function (urls) {
-		var share = {},
-		receivers;
+	var encryptMedia = function(message, callback) {
+		bm.asyncLoop(message.media, processImage, callback);
+	}
 
-		// build url object
-		share.gid = groupid;
-		share.message = {'links': urls};
-
+	var shareMessage = function(share) {
 		// Get receivers
-		receivers = bm.module.get_instance_members(groupid);
+		var receivers = bm.module.get_instance_members(groupid);
 
 		// Share as JSON string, base64 encoded
-		bm.osn.shareOnWall(btoa(JSON.stringify(share)), Object.keys(receivers), true, function() {});
+		bm.osn.shareOnWall(btoa(JSON.stringify(share)), Object.keys(receivers), true);
+	};
 
-	});
+	// Prepare shared message
+	var share = {};
+	share.gid = groupid;
+	share.data = {};
+
+	var hasText = message.hasOwnProperty("plaintext"),
+	hasMedia = (message.hasOwnProperty("media") && Array.isArray(message.media));
+
+	if (hasText) {
+		// Encrypt plaintext
+		encryptText(message, function (ct) {
+			share.data.text_message = ct;
+
+			// Additionally encrypt media
+			if (hasMedia) {
+				encryptMedia(message, function (urls) {
+					share.data.links = urls;
+
+					shareMessage(share);
+				});
+			} else {
+				// share directly
+				shareMessage(share);
+			}
+
+		});
+	} else {
+		if (hasMedia) {
+			encryptMedia(message, function (urls) {
+				share.data.links = urls;
+
+				shareMessage(share);
+			});
+		}
+	}
 };
-
 
 Broadmask.prototype.encrypt = function (groupid, data, asimage, callback) {
 	// TODO async

@@ -22,12 +22,19 @@ chrome.extension.onRequest.addListener(function (request, sender, responseCallba
 // Search for BM IDs in Stream Messages
 var handleMessage = function (streamElement, message) {
 	"use strict";
-	chrome.extension.sendRequest(message, function (response) {
+	var port = chrome.extension.connect({name: "fbcontentscript"});
+	port.postMessage(message);
+
+	port.onMessage.addListener(function (response) {
 		if (typeof response === 'object') {
-			// remove child nodes
-			while (streamElement.hasChildNodes()) {
-				streamElement.removeChild(streamElement.lastChild);
+			// remove child nodes if no content was added yet
+			if (!streamElement.getAttribute("bm-injected")) {
+				while (streamElement.hasChildNodes()) {
+					streamElement.removeChild(streamElement.lastChild);
+				}
 			}
+
+			// check response for data
 			if (response.urls) {
 				// data urls, display them
 				for (var i = 0, len = response.urls.length; i < len; i += 1) {
@@ -47,17 +54,30 @@ var handleMessage = function (streamElement, message) {
 						// Extract data url
 						var mimeTypeEnd = response.urls[i].indexOf(";"),
 						mimetype = response.urls[i].substr(0, mimeTypeEnd),
+						fullwrap = document.createElement("p"),
 						full = document.createElement("a");
 						full.href = response.urls[i];
 						full.innerText = "Click to view content (Mimetype: " + mimetype + ").";
-						streamElement.appendChild(full);
+						fullwrap.appendChild(full);
+						streamElement.appendChild(fullwrap);
 					}
-
+					streamElement.setAttribute("bm-injected", true);
 				}
 			} else if (response.plaintext) {
-				streamElement.innerHTML = "<p>" + response.plaintext.split("\n").join("<br/>") + "</p>";
+				
+				var textnode = document.createElement("p");
+				textnode.innerText = response.plaintext.split("\n").join("<br/>");
+				// Make textnode appear on top
+				if (streamElement.firstChild) {
+					streamElement.insertBefore(textnode, streamElement.firstChild);
+				}
+				streamElement.appendChild(textnode);
+				streamElement.setAttribute("bm-injected", true);
 			} else if (response.error) {
-					streamElement.innerHTML = "<p>" +  response.error_msg.split("\n").join("<br/>") + "</p>";
+				var errnode = document.createElement("p");
+				errnode.innerText = response.error_msg.split("\n").join("<br/>");
+				streamElement.appendChild(errnode);
+				streamElement.setAttribute("bm-injected", true);
 			}
 		}
 	});
@@ -72,9 +92,7 @@ var refresh = function () {
 		try {
 		var story_input = stories[i].querySelector("form.commentable_item")[2].getAttribute("value");
 		story_data = JSON.parse(story_input);
-		} catch (e) {
-			console.error("Couldn't fetch attributes for ui stream story");
-		}
+		} catch (e) { /* no story exists to be parsed */ continue; }
 		// skip all posts not created by our app
 		// if (story_data.source_app_id !== "281109321931593") {
 		// 	return;
