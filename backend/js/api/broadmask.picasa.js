@@ -106,7 +106,7 @@ Broadmask_Picasa.prototype.fetchImage = function (url, callback) {
 */
 Broadmask_Picasa.prototype.downloadImage = function (url, callback) {
 	"use strict";
-	var params = "?alt=json&imgmax=d";
+	var params = "&alt=json&imgmax=d";
 	var xhr = new XMLHttpRequest();
 	var that = this;
 	xhr.open("GET", url + params, true);
