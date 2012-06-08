@@ -32,6 +32,6 @@
 	],
 	"plugins": [
     { "path": "plugin/Broadmask.plugin", "public": false },
-    { "path": "plugin/npbroadmask.so", "public": false }
+    { "path": "plugin/npBroadmask.so", "public": false }
   	]
 }
