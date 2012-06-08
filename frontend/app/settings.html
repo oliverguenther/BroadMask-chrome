@@ -72,7 +72,7 @@
 							var data = response.data;
 							var keyid = data[0].message.toLowerCase().match(/0x[a-z0-9]+/i)[0];
 							if (!keyid) { 
-								console.error("Found PGP key message, but couldn't parse content! " + data[0].message); 
+								console.nrror("Found PGP key message, but couldn't parse content! " + data[0].message); 
 							} else {
 								$("#key-info").val(keyid);
 								$("#remove-key-btn").removeAttr("disabled").attr("data-posts", JSON.stringify(data))
@@ -111,7 +111,9 @@
 						$(this).val('Authorize');
 						$(this).removeClass('btn-danger').addClass('btn-success').attr("data-action", "login");
 					} else {
-						bm.imgHost.authorize(check_host_auth);
+						chrome.tabs.getCurrent(function (tab) {
+							bm.imgHost.authorize(tab, check_host_auth);
+						});
 					}
 				});
 
@@ -124,7 +126,9 @@
 						$(this).val('Authorize');
 						$(this).removeClass('btn-danger').addClass('btn-success').attr("data-action", "login");
 					} else {
-						bm.osn.authorize(true, check_osn_auth);
+						chrome.tabs.getCurrent(function (tab) {
+							bm.osn.authorize(true, check_osn_auth);
+						});
 					}
 				});
 			});

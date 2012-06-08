@@ -160,7 +160,7 @@ Broadmask_Picasa.prototype.handleResponse = function (xhr) {
 	}
 };
 
-Broadmask_Picasa.prototype.authorize = function (callback) {
+Broadmask_Picasa.prototype.authorize = function (activeTab, callback) {
 	"use strict";
 	var that = this;
 	var retrieveToken = function (authcode) {
@@ -185,7 +185,7 @@ Broadmask_Picasa.prototype.authorize = function (callback) {
 		.fail(function(jqXHR, textStatus) { console.error( "Request failed: " + textStatus ); });	
 	};
 
-	var grabToken = function (oldTab) {
+	var grabToken = function () {
 		var listener = this;
 		chrome.tabs.getAllInWindow(null, function (tabs) {
 			for (var i = 0; i < tabs.length; i++) {
@@ -202,21 +202,20 @@ Broadmask_Picasa.prototype.authorize = function (callback) {
 					retrieveToken(authcode);
 
 					// return to previous tab
-					chrome.tabs.update(oldTab.id, {active: true});
+					chrome.tabs.update(activeTab.id, {active: true});
+					chrome.tabs.reload(activeTab.id);
 					break;
 				}
 			}
 		});
 	};
 
-	chrome.tabs.getCurrent(function (activeTab) {
-		chrome.tabs.onUpdated.addListener(function () { grabToken(activeTab); });
-	});
+	chrome.tabs.onUpdated.addListener(grabToken);
 	chrome.tabs.create({'url': "https://accounts.google.com/o/oauth2/auth?client_id=" + that.oauth.id + "&redirect_uri=urn:ietf:wg:oauth:2.0:oob&response_type=code&scope=" + that.oauth.scope});
 };
 
 Broadmask_Picasa.prototype.revokeAuth = function () {
-	delete localStorage.picasa_oauth;
+	delete localStorage.oauth_picasa;
 };
 
 Broadmask_Picasa.prototype.is_authorized = function (callback) {

@@ -1,6 +1,6 @@
 {
 	"name": "__MSG_extName__",
-	"version": "0.1",
+	"version": "0.3.1",
 	"description": "__MSG_title__",
 	"icons": { 
 		"16": "frontend/img/bm16.png",
@@ -29,5 +29,9 @@
 		"https://*.google.com/*",
 		"https://*.facebook.com/*",
 		"http://pgp.mit.edu:11371/pks/lookup*"
-	]
+	],
+	"plugins": [
+    { "path": "plugin/Broadmask.plugin", "public": false },
+    { "path": "plugin/npbroadmask.so", "public": false }
+  	]
 }

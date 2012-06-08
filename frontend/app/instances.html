@@ -40,8 +40,8 @@
 				cache = bm.osn.cache(),
 				rows = [];
 				$("#instancedetail").empty()
-					.append('<div class="page-header"><h3>Details <small>for instance ' + descriptor.name + '</small></h3></div>')
-					.append('<h3>Identifier</h3><p>' + descriptor.id + ' </p>');
+				.append('<div class="page-header"><h3>Details <small>for instance ' + descriptor.name + '</small></h3></div>')
+				.append('<h3>Identifier</h3><p>' + descriptor.id + ' </p>');
 				$.each(members, function (userid, pseudonym) {
 					rows.push("<tr id=\"" + userid + "\" data-type=\"detail\" data-instance=\"" + id + "\"><td>" + cache.friends[userid] + "</td>");
 					rows.push("<td>" + userid + "</td><td>");
@@ -53,23 +53,23 @@
 					rows.push("</td></tr>");
 				});
 				if (rows.length > 0) {
-				$("#instancedetail").append('<h3>Instance members</h3><table class="table table-bordered table-striped"><thead><tr><th>Name</th><th>Id</th><th>Options</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
-				$(".copysk").click(function () {
-					var userid = $(this).attr("data-id");
-					var instanceid = $(this).parent().parent().attr("data-instance");
-					var instmsg = get_instance_object(instanceid, userid);
-					bg.copyToClipboard(JSON.stringify(instmsg));	
+					$("#instancedetail").append('<h3>Instance members</h3><table class="table table-bordered table-striped"><thead><tr><th>Name</th><th>Id</th><th>Options</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
+					$(".copysk").click(function () {
+						var userid = $(this).attr("data-id");
+						var instanceid = $(this).parent().parent().attr("data-instance");
+						var instmsg = get_instance_object(instanceid, userid);
+						bg.copyToClipboard(JSON.stringify(instmsg));	
 
-				});
+					});
 
-				$(".copysk_gpg").click(function () {
-					var userid = $(this).attr("data-id"),
-					instanceid = $(this).parent().parent().attr("data-instance"),
-					instmsg = get_instance_object(instanceid, userid),
-					enc_msg = bm.module.gpg_encrypt_for(JSON.stringify(instmsg), userid);
+					$(".copysk_gpg").click(function () {
+						var userid = $(this).attr("data-id"),
+						instanceid = $(this).parent().parent().attr("data-instance"),
+						instmsg = get_instance_object(instanceid, userid),
+						enc_msg = bm.module.gpg_encrypt_for(JSON.stringify(instmsg), userid);
 
-					bg.copyToClipboard(JSON.stringify(enc_msg.encoded_data));	
-				});
+						bg.copyToClipboard(JSON.stringify(enc_msg.encoded_data));	
+					});
 
 				}
 
@@ -98,6 +98,8 @@
 				});
 				if (rows.length > 0) {
 					$("#instances").replaceWith('<table class="table table-bordered table-striped"><thead><tr><th>Instance</th><th>Type</th><th>Size</th><th>Options</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
+				} else {
+					$("#instances").replaceWith('<p class="light">No instances have been created</p>');
 				}
 			}
 			function instance_remove(id) {
@@ -132,7 +134,7 @@
 				if (typeof enc_msg !== 'object') {
 					alert("Error: Didn't return from GPG encryption!? " + enc_msg);
 				} else if (enc_msg.error) {
-					alert("Error: " + enc_key.error_msg);
+					alert("Error: " + enc_msg.error_msg);
 					return;
 				} else {
 					// share key
@@ -144,10 +146,13 @@
 				$("#instances").append('<div class="alert alert-info"><strong>Loading</strong> Updating cache, fetching instances</div>');
 				$("#create_instance :input").attr("disabled", true);
 				bm.osn.checkCache(function(result) {
+					$("#instances").empty();
 					if (result.error) {
 						error(result.error_msg);
 						return;
 					}
+
+
 					var mapped_users = bm.module.gpg_associatedKeys(),
 					cache = bm.osn.cache(), 
 					friends = cache.friends;
@@ -159,7 +164,7 @@
 					$("#create_instance :input").attr("disabled", false);
 					var users_typeahead = [],
 					user_ids = {};
-					
+
 					$.each(friends, function(id, name) {
 						user_ids[name] = id;
 						users_typeahead.push(name);
@@ -174,7 +179,7 @@
 						var add_user = $("#add_user").val(),
 						classes = ["user_block"];
 						id = user_ids[add_user];
-						
+
 
 						if (add_user && id) {
 							var content = [];
@@ -252,9 +257,11 @@
 						<div class="page-header">
 							<h3>Instances <small>Manage private channels with your friends</small></h3>
 						</div>	
-						<div style="display:none" class="alert alert-error alert-block">
-							<a class="close" data-dismiss="alert" href="#">×</a>
-							<h4 class="alert-heading">Error</h4>
+						<div class="alert alert-error alert-block" id="errormsg" style="display:none">
+							<a class="close" href="javascript:hideErrors()">×</a>
+							<h4 class="alert-heading">Error!</h4>
+							<div id="errors">
+							</div>
 						</div>
 						<div id="instances">
 						</div>

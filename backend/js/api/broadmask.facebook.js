@@ -7,11 +7,7 @@ function Broadmask_Facebook() {
 	this.app_id = "281109321931593";
 
 	// update cache, but do not force auth
-	this.authorize(false, this.checkCache);
-
-
-
-
+	this.authorize(null, false, this.checkCache);
 }
 
 /** 
@@ -108,7 +104,7 @@ Broadmask_Facebook.prototype.is_authorized = function (callback) {
 };
 
 
-Broadmask_Facebook.prototype.request_token = function (callback) {
+Broadmask_Facebook.prototype.request_token = function (activeTab) {
 	"use strict";
 	var that = this;
 	var getParameterByName = function (name, url) {
@@ -122,7 +118,7 @@ Broadmask_Facebook.prototype.request_token = function (callback) {
 			return decodeURIComponent(results[1].replace(/\+/g, " "));
 		}
 	};
-	var grabToken = function (oldTab) {
+	var grabToken = function () {
 		var listener = this;
 		chrome.tabs.getAllInWindow(null, function (tabs) {
 			for (var i = 0; i < tabs.length; i++) {
@@ -134,7 +130,8 @@ Broadmask_Facebook.prototype.request_token = function (callback) {
 					chrome.tabs.remove(tabs[i].id);
 					that.checkCache();
 					// return to previous tab
-					chrome.tabs.update(oldTab.id, {active: true});
+					chrome.tabs.update(activeTab.id, {active: true});
+					chrome.tabs.reload(activeTab.id);
 					break;
 				}
 			}
@@ -142,14 +139,12 @@ Broadmask_Facebook.prototype.request_token = function (callback) {
 	}
 
 	delete localStorage.fbtoken;
-	chrome.tabs.getCurrent(function (activeTab) {
-		chrome.tabs.onUpdated.addListener(function () { grabToken(activeTab); });
+		chrome.tabs.onUpdated.addListener(grabToken);
 		chrome.tabs.create({'url': "https://www.facebook.com/dialog/oauth?client_id=" + that.app_id + "&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token&scope=publish_stream,read_stream"},
 			null);
-	});
 };
 
-Broadmask_Facebook.prototype.authorize = function (force_first_auth, callback) {
+Broadmask_Facebook.prototype.authorize = function (tab, force_first_auth, callback) {
 	"use strict";
 
 	var that = this,
@@ -157,11 +152,11 @@ Broadmask_Facebook.prototype.authorize = function (force_first_auth, callback) {
 
 	// only perform first auth if forced
 	if (!token && force_first_auth) {
-		this.request_token();
+		this.request_token(tab);
 	} else {
 		this.is_authorized(function (isvalid) {
-			if (isvalid !== true) {
-				that.request_token();
+			if (isvalid !== true  && force_first_auth) {
+				that.request_token(tab);
 			}
 		});
 	}
@@ -412,7 +407,7 @@ Broadmask_Facebook.prototype.checkCache = function (callback) {
 		this.is_authorized(function (isvalid) {
 			if (!isvalid) {
 				if (typeof callback === "function") {
-					callback({error: "No token available"});
+					callback({error: true, error_msg: "No Facebook token available. Authorize BroadMask for Facebook in the settings first!"});
 				}
 			} else {
 				var cache = {};
