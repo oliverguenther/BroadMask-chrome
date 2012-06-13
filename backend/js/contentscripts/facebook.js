@@ -28,7 +28,7 @@ var handleMessage = function (streamElement, message) {
 	port.onMessage.addListener(function (response) {
 		if (typeof response === 'object') {
 			// remove child nodes if no content was added yet
-			if (!streamElement.getAttribute("bm-injected")) {
+			if (!streamElement.getAttribute("bm-processed")) {
 				while (streamElement.hasChildNodes()) {
 					streamElement.removeChild(streamElement.lastChild);
 				}
@@ -61,7 +61,7 @@ var handleMessage = function (streamElement, message) {
 						fullwrap.appendChild(full);
 						streamElement.appendChild(fullwrap);
 					}
-					streamElement.setAttribute("bm-injected", true);
+					streamElement.setAttribute("bm-processed", true);
 				}
 			} else if (response.plaintext) {
 				
@@ -99,7 +99,7 @@ var refresh = function () {
 		// }
 		mb = stories[i].getElementsByClassName("messageBody")[0];
 
-		if (mb) {
+		if (mb && !mb.hasAttribute("bm-injected")) {
 			it = mb.innerText;
 			if (it !== null && it !== 'undefined') {
 				// check for broadmask post
@@ -109,13 +109,16 @@ var refresh = function () {
 				bm_message = {id: story_data.target_fbid};
 				if (bmtag !== -1) {
 					bm_message.type = "broadmask";
+					handleMessage(mb, bm_message);
 				} else if (pgptag !== -1) {
 					bm_message.type = "pgp";
+					// set message as handled
+					mb.setAttribute("bm-injected", true);
+					handleMessage(mb, bm_message);
 				}
-				handleMessage(mb, bm_message);
 			}
 		}
 	}
 };
 
-window.setTimeout("refresh()", 0);
+window.setInterval(refresh, 1000);

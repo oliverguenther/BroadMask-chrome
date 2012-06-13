@@ -263,14 +263,16 @@ Broadmask_Facebook.prototype.share = function () {
 Broadmask_Facebook.prototype.shareOnWall = function (message, allowed_users, armoring, callback) {
 	"use strict";
 	// Post to Facebook wall using privacy set to this friendlistid
-	var data = {},
-	privacy = {value: 'CUSTOM', friends: 'SOME_FRIENDS', allow: allowed_users.join(",")};
+	var data = {};
 	if (armoring) {
 		data.message = this.armorData(message);
 	} else {
 		data.message = message;
 	}
-	data.privacy = JSON.stringify(privacy);
+	if (allowed_users) {
+		var privacy = {value: 'CUSTOM', friends: 'SOME_FRIENDS', allow: allowed_users.join(",")};
+		data.privacy = JSON.stringify(privacy);
+	}
 	this.sendFBData("https://graph.facebook.com/me/feed", data, callback);
 };
 

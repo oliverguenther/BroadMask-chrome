@@ -51,8 +51,9 @@ Broadmask.prototype.onCSConnection = function (port) {
 				}
 				port.postMessage(result);
 			});
-		} else {
-			port.postMessage({error: true, error_msg: "Unknown message"});
+		} 
+		if (!(bm_msg.data.text_message || bm_msg.data.links)) {
+			port.postMessage({error: true, error_msg: "Could not detect any messages or links"});
 			console.warn("unknown message. " + JSON.stringify(bm_msg));
 		}
 
@@ -246,10 +247,10 @@ Broadmask.prototype.share = function (groupid, message) {
 
 	var shareMessage = function(share) {
 		// Get receivers
-		var receivers = bm.module.get_instance_members(groupid);
+		// var receivers = bm.module.get_instance_members(groupid);
 
 		// Share as JSON string, base64 encoded
-		bm.osn.shareOnWall(btoa(JSON.stringify(share)), Object.keys(receivers), true);
+		bm.osn.shareOnWall(btoa(JSON.stringify(share)), {}, true);
 	};
 
 	// Prepare shared message

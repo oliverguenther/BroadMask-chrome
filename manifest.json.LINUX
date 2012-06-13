@@ -31,6 +31,6 @@
 		"http://pgp.mit.edu:11371/pks/lookup*"
 	],
 	"plugins": [
-    { "path": "plugin/Broadmask.plugin", "public": false }
+    { "path": "plugin/npBroadmask.so", "public": false }
   	]
 }

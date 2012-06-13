@@ -224,6 +224,7 @@ Broadmask_Picasa.prototype.is_authorized = function (callback) {
 
 	if (!localStorage.oauth_picasa) {
 		callback(false);
+		return;
 	}
 
 	try {

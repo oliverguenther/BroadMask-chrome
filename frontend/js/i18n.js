@@ -1,12 +1,15 @@
 // Replace span tags with localized message
 $(document).find('*[i18n]').each(function () {
 	"use strict";
-	var msg,
+	var msg, i18nmsg,
 		tag = $(this);
 	// Replace span tag with its content
 	if (tag.is('span')) {
 		msg = this.innerHTML;
-		tag.replaceWith(chrome.i18n.getMessage(msg));
+		i18nmsg = chrome.i18n.getMessage(msg);
+		if (i18nmsg) {
+			tag.replaceWith(i18nmsg);
+		}
 	} else if (tag.is('input') && tag.attr('type') === 'button') {
 		// Replace button value with localized message
 		msg = tag.attr("value");

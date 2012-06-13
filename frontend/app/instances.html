@@ -148,7 +148,7 @@
 				bm.osn.checkCache(function(result) {
 					$("#instances").empty();
 					if (result.error) {
-						error(result.error_msg);
+						UI.error(result.error_msg);
 						return;
 					}
 
@@ -158,7 +158,7 @@
 					friends = cache.friends;
 
 					if (Object.size(friends) == 0) {
-						error("Facebook friends couldn't be fetched. Did you authorize the extension yet?");
+						UI.error("Facebook friends couldn't be fetched. Did you authorize the extension yet?");
 						return;
 					}
 					$("#create_instance :input").attr("disabled", false);
@@ -325,6 +325,6 @@
 		</body>
 		<script src="../js/i18n.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/javascript" charset="utf-8">
-			bmMenu("navbar", "instances");	
+			UI.bmMenu("navbar", "instances");	
 		</script>
 	</html>
