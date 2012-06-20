@@ -1,7 +1,5 @@
 <!DOCTYPE html>
 <head>
-	<link rel="stylesheet" href="css/bootstrap.css" type="text/css" charset="utf-8"/>
-	<link rel="stylesheet" href="css/base.css" type="text/css" charset="utf-8"/>
 	<script type="text/javascript" charset="utf-8">
 		function plugin0()
 		{
@@ -27,13 +25,10 @@
 
 		function pluginLoaded() {
 			if (plugin().valid === true) {
-				// console.log(plugin().gpg_store_keyid("100001437141003", "A3A8BDAD7C0C552C"));
-				// console.log(plugin().gpg_get_keyid("100001437141003"));
-				// var enc_a = plugin().gpg_encrypt_for("HIHIHIHI", "15396A7933EB059A");
-				// var enc_b = plugin().gpg_encrypt_with("BLABLABLA", "42BC1289F63A0D1977061D8EA3A8BDAD7C0C552C");
-				// console.log(plugin().gpg_decrypt(enc_a.encoded_data));
-				// console.log(plugin().gpg_associatedKeys());
-				plugin().run_benchmark("/Users/oliver/uni/ba/benchmark", function() {alert("Benchmark completed.");});
+				plugin().add_profile("oliver", "A3A8BDAD7C0C552C");
+				plugin().unlock_profile("oliver");
+				plugin().create_sender_instance("test", "foobar", 256);
+				plugin().store_profile("oliver");
 			} else {
 				alert("Not valid :(");
 			}

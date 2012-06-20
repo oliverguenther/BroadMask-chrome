@@ -29,8 +29,5 @@
 		"https://*.google.com/*",
 		"https://*.facebook.com/*",
 		"http://pgp.mit.edu:11371/pks/lookup*"
-	],
-	"plugins": [
-    { "path": "plugin/Broadmask.plugin", "public": false }
   	]
 }

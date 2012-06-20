@@ -143,4 +143,10 @@ progress {
 }
 
 
+tr.highlight-row > td {
+	background: #fef38a !important;
+	font-weight: bold;
+}
+
+
 
