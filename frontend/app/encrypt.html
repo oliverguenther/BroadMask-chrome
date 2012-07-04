@@ -50,7 +50,10 @@
 					});
 
 					var instances = bm.module.get_stored_instances();
-					if (Object.size(instances) > 0) {
+					if (instances.error === true) {
+						UI.error("Error loading instances:" + instances.error_msg);
+					}
+					else if (Object.size(instances) > 0) {
 						$("#create_users_note").hide();
 
 						/** Fill instances select */

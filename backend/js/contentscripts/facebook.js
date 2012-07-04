@@ -28,7 +28,7 @@ var handleMessage = function (streamElement, message) {
 	port.onMessage.addListener(function (response) {
 		if (typeof response === 'object') {
 			// remove child nodes if no content was added yet
-			if (!streamElement.getAttribute("bm-processed")) {
+			if (!streamElement.getAttribute("bm-injected")) {
 				while (streamElement.hasChildNodes()) {
 					streamElement.removeChild(streamElement.lastChild);
 				}
@@ -61,7 +61,7 @@ var handleMessage = function (streamElement, message) {
 						fullwrap.appendChild(full);
 						streamElement.appendChild(fullwrap);
 					}
-					streamElement.setAttribute("bm-processed", true);
+					streamElement.setAttribute("bm-injected", true);
 				}
 			} else if (response.plaintext) {
 				

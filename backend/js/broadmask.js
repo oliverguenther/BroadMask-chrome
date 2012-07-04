@@ -62,25 +62,28 @@ Broadmask.prototype.onCSConnection = function (port) {
 	var handleKeyTransmission = function (message) {
 		try {
 			var dec_msg = that.module.gpg_decrypt(message);
-			if (typeof dec_msg !== 'object' || !dec_msg.hasOwnProperty("message")) {
+			if (typeof dec_msg !== 'object' || !dec_msg.hasOwnProperty("result")) {
 				return;
 			}
-			var msg = JSON.parse(dec_msg.message);
+			var msg = JSON.parse(dec_msg.result);
 			if (msg.type === "instance") {
 				// incoming instance, set it up
 				if (msg.instance_type === 1) {
 					// receiver instance {pk, sk}
 					that.module.create_receiver_instance(msg.id, "receiver", msg.max_users, msg.pk, msg.sk);
-					that.osn.message_ack({id: request.id, type: "post"});
+					port.postMessage({error:false, plaintext: "Received a BM-BE instance with identifier " + msg.id + ". Added to your groups"});
+
+					//that.osn.message_ack({id: request.id, type: "post"});
 				} else if (msg.instance_type === 4) {
 					that.module.create_receiver_instance(msg.id, "receiver", msg.max_users, msg.pk, msg.sk);
-					that.osn.message_ack({id: request.id, type: "post"});
+					port.postMessage({error:false, plaintext: "Received a BM-SK instance with identifier " + msg.id + ". Added to your groups"});
+					//that.osn.message_ack({id: request.id, type: "post"});
 				} else {
-					console.warn("unknown instance type in " + fbmsg);
+					console.warn("unknown instance type");
 				}
 			}
 		} catch (e) {
-			console.log("Couldn't parse message " + fbmsg + ". Error: " + e);
+			console.log("Couldn't parse message. Error: " + e);
 		}
 	};
 
@@ -250,7 +253,7 @@ Broadmask.prototype.share = function (groupid, message) {
 		// var receivers = bm.module.get_instance_members(groupid);
 
 		// Share as JSON string, base64 encoded
-		bm.osn.shareOnWall(btoa(JSON.stringify(share)), {}, true);
+		bm.osn.shareOnWall(btoa(JSON.stringify(share)), [], true);
 	};
 
 	// Prepare shared message

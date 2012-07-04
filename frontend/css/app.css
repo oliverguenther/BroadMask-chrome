@@ -79,6 +79,7 @@ progress {
 	padding: 10px;
 	border: 1px solid #ddd;
 	margin-right: 20px;
+	word-break: break-all;
 }
 
 .statusicon {

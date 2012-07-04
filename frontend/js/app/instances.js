@@ -49,7 +49,7 @@ function instance_details(id) {
 			instmsg = get_instance_object(instanceid, userid),
 			enc_msg = bm.module.gpg_encrypt_for(JSON.stringify(instmsg), userid);
 
-			bg.copyToClipboard(JSON.stringify(enc_msg.encoded_data));	
+			bg.copyToClipboard(JSON.stringify(enc_msg.result));	
 		});
 
 	}
@@ -65,6 +65,12 @@ function instance_details(id) {
 function print_instances() {
 	var instances = bm.module.get_stored_instances(),
 	rows = [];
+
+	if (instances.error === true) {
+		UI.error("Error loading instances: " + instances.error_msg);
+		return;
+	}
+
 	$.each(instances, function(i, instance) {
 		rows.push("<tr id=\"" + instance.id + "\"><td>");
 		rows.push(instance.name);
@@ -92,19 +98,37 @@ function instance_remove(id) {
 }
 
 function get_instance_object (instanceid, userid) {
-	var sk = bm.module.get_member_sk(instanceid, userid),
-	descriptor = bm.module.get_instance_descriptor(instanceid);
+	var descriptor = bm.module.get_instance_descriptor(instanceid);
 
-	var instmsg = {};
+	if (descriptor.error) {
+		UI.error("Couldn't retrieve private key for instance " + instanceid + ". Error was: " + descriptor.error_msg);
+		return;
+	}
+
+
+
+	var instmsg = {}, sk = {error: true, error_msg: "No result"};
 	instmsg.type = "instance";
 	instmsg.instance_type = descriptor.type;
 	instmsg.id = descriptor.id;
 	instmsg.max_users = descriptor.max_users;
 	if (descriptor.type === 1) {
 		var pk = bm.module.get_bes_public_params(instanceid);
+		sk = bm.module.get_member_sk(instanceid, userid);
 		instmsg.pk = pk.result;
+	} else if (descriptor.type === 4) {
+		sk = bm.module.get_symmetric_key(instanceid);
+	} else {
+		UI.error("Descriptor type neither BES sender nor Shared instance? Was " + descriptor.type);
 	}
-	instmsg.sk = sk;
+
+	if (sk.error) {
+		UI.error("Couldn't retrieve private key for instance " + instanceid + ". Error was: " + sk.error_msg);
+		return;
+	}
+
+
+	instmsg.sk = sk.result;
 	return instmsg;
 }
 
@@ -119,7 +143,7 @@ function upload_key(instanceid, userid) {
 		return;
 	} else {
 		// share key
-		bm.osn.shareOnWall(enc_msg.encoded_data, [userid], false, function () {});
+		bm.osn.shareOnWall(enc_msg.result, [userid], false, function () {});
 	}
 }
 

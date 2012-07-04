@@ -12,6 +12,12 @@ function print_stored_map() {
 	var users = bm.module.gpg_associatedKeys(),
 	friends = cached_friends();
 	var rows = [];
+	
+	if (users.error === true) {
+		UI.error("Error loading instances:" + users.error_msg);
+		return;
+	}
+	
 	$.each(users, function(id, key_id) {
 		var friend_name = friends[id];
 		rows.push("<tr><td>");
@@ -86,7 +92,7 @@ $(document).ready(function () {
 
 		$("#btn-create-mapping").click(function () {
 			$("#create_user_success").hide();
-			resetFormErrors();
+			UI.resetFormErrors();
 			var user = {};
 
 			if (!$("#friend_name").val()) {

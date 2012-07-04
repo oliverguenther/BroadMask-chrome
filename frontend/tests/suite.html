@@ -20,15 +20,18 @@
 		function pluginLoaded() {
 			if (plugin().valid === true) {
 				log("starting sending instance 'test'");
+				plugin().add_profile("test", "55AABA0FCF4BA8E0");
+				plugin().unlock_profile("test");
 				var public_params = plugin().create_sender_instance("test", "foobar", 256);
-				log("Public params: " + public_params);
-				log("(Size " + public_params.length + " bytes)");
+				log("Public params: " + (public_params.error ? "[ERROR] " + public_params.error_msg : public_params.result));
+				public_params = public_params.result;
 				var members = ["a", "b", "c", "d"];
 				var receivers = ["a", "b", "c"];
 				for (var i = 0; i < members.length; i += 1) {
 					var pseudonym = plugin().add_member("test", members[i]);
 					var key = plugin().get_member_sk("test", members[i]);
-					log("Mapping member " + members[i] + " to " + pseudonym + " . Key: " + key + " (size " + key.length + ")");
+					if (key.error) { log("[ERROR] "  + key.error_msg); return; }
+					log("Mapping member " + members[i] + " to " + pseudonym + " . Key: " + key.result + " (size " + key.result.length + ")");
 				}
 				var plaintext = "This is a test string.";
 				log("Encrypting '" + plaintext + "' using sending instance 'test' to " + members.join(", "));
@@ -63,15 +66,17 @@
 
 				log("Starting receiver instance 'receiver_a'");
 				var sk_a = plugin().get_member_sk("test", "a");
-				log("sk_a " + sk_a + " ( " + sk_a.length + " bytes)");
-				plugin().create_receiver_instance("receiver_a", "Receiver instance a", 256, public_params, sk_a);
+				if (sk_a.error) {log("[ERROR] " + sk_a.error_msg); return;}
+				log("sk_a " + sk_a.result + " ( " + sk_a.result.length + " bytes)");
+				plugin().create_receiver_instance("receiver_a", "Receiver instance a", 256, public_params, sk_a.result);
 				log("Decrypting ciphertext");
 				var recovered = plugin().decrypt_b64("receiver_a", ciphertext, false);
 				log("Recovered text: " + JSON.stringify(recovered));
 
 				log("Starting receiver instance 'receiver_d'");
 				var sk_d = plugin().get_member_sk("test", "d");
-				plugin().create_receiver_instance("receiver_d", "Receiver instance d", 256, public_params, sk_d);
+				if (sk_d.error) {log("[ERROR] " + sk_d.error_msg); return;}
+				plugin().create_receiver_instance("receiver_d", "Receiver instance d", 256, public_params, sk_d.result);
 				var recovered_d = plugin().decrypt_b64("receiver_d", ciphertext, false);
 				log("Recovered text: " + JSON.stringify(recovered_d));
 
@@ -93,6 +98,7 @@
 				plugin().remove_instance("test");
 				plugin().remove_instance("receiver_a");
 				plugin().remove_instance("receiver_d");
+				plugin().delete_profile("test");
 
 				
 			} else {

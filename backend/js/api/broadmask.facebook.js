@@ -269,42 +269,12 @@ Broadmask_Facebook.prototype.shareOnWall = function (message, allowed_users, arm
 	} else {
 		data.message = message;
 	}
-	if (allowed_users) {
+	if (allowed_users.length > 0) {
 		var privacy = {value: 'CUSTOM', friends: 'SOME_FRIENDS', allow: allowed_users.join(",")};
 		data.privacy = JSON.stringify(privacy);
 	}
 	this.sendFBData("https://graph.facebook.com/me/feed", data, callback);
 };
-
-/** 
-* share multiple messages on the logged in user's Facebook wall
-* @param messages the message to send (object)
-* @param callback Called when returned from upload
-*/
-Broadmask_Facebook.prototype.shareBatch = function (messages, callback) {
-	"use strict";
-	var token = localStorage.fbtoken,
-	max_batchsize = 50,
-	count = 0,
-	timer = function (delay, subset) {
-		setTimeout(function () {
-			$.post("https://graph.facebook.com/?batch=" + encodeURIComponent(JSON.stringify(subset)), {"access_token" : token}, function () {
-				count += subset.length;
-				if (count === messages.length) {
-					callback();
-				}
-			});
-		}, 1000 * delay);
-	};
-	if (typeof token !== "undefined") {
-		for (var i = 0, slicelen = (messages.length / max_batchsize); i <= slicelen; i++) {
-			var subset = messages.slice(i*max_batchsize, (i+1)*max_batchsize);
-			if (subset.length > 0) {
-				timer(i, subset);
-			}
-		}
-	}
-}
 
 Broadmask_Facebook.prototype.updateFriendlists = function (callback) {
 	"use strict";
@@ -344,7 +314,12 @@ Broadmask_Facebook.prototype.updateFriendlists = function (callback) {
 		$.each(friendlists.data, function () {
 			arr.push(this);
 		});
-		fetchFriendlists(arr, callback);
+		if (arr.length > 0) {
+			fetchFriendlists(arr, callback);
+		} else {
+			// no friendlists found => set empty
+			callback([]);
+		}
 	});
 };
 

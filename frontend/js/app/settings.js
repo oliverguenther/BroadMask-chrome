@@ -24,22 +24,6 @@ function check_osn_auth() {
 	});
 }
 
-function make_profile_active(name) {
-	var result = bm.module.unlock_profile(name);
-	if (result.error === true) {
-		error("Could not unlock profile: " + result.error_msg);
-		return;
-	}
-	get_stored_profiles();
-}
-
-function delete_profile(name) {
-	if (confirm("Are you sure you want to delete the active profile '" + name + "'?.\n" 
-	+ "This will remove ALL communication groups you have created using this profile.")) {
-		bm.module.delete_profile(name);
-		get_stored_profiles();
-	}
-}
 
 function get_stored_profiles() {
 	var profiles = bm.module.get_stored_profiles(),
@@ -54,16 +38,34 @@ function get_stored_profiles() {
 
 	if (Object.size(profiles) > 0) {
 		$.each(profiles, function (name, key) {
-			var is_active = (active_profile === name);
+			var is_active = ((active_profile === name) && is_unlocked);
 			tabled.push("<tr class=\"" + (is_active ? "highlight-row" : "") + "\"><td>" + name + "</td>");
 			tabled.push("<td>" + key + "</td><td>");
 			if (!is_active) {
-				tabled.push("<a href=\"javascript:make_profile_active('" + name + "');\" ><i class=\"icon-user\"></i> Use this profile</a><br/>");
+				tabled.push("<a class=\"btn-make-active\" href=\"#\" data-profilename=\"" + name + "\"><i class=\"icon-user\"></i> Use this profile</a><br/>");
 			}  else {
-				tabled.push("<a href=\"javascript:delete_profile('" + name + "');\" ><i class=\"icon-remove\"></i> Delete this profile</a></td></tr>");
+				tabled.push("<a class=\"btn-delete-profile\" href=\"#\" data-profilename=\"" + name + "\" href=\"javascript:delete_profile(\$(this));\" ><i class=\"icon-remove\"></i> Delete this profile</a></td></tr>");
 			}
 		});
 		$("#current_profiles").replaceWith('<table class="table table-bordered table-striped"><thead><tr><th>Name</th><th>PGP-Key</th><th>Action</th></tr></thead><tbody>' + tabled.join("") + '</tbody></table>');
+		$(".btn-make-active").click(function () {
+			var name = $(this).attr("data-profilename"),
+			result = bm.module.unlock_profile(name);
+			if (result.error === true) {
+				UI.error("Could not unlock profile: " + result.error_msg);
+				return;
+			}
+			get_stored_profiles();
+		});
+
+		$(".btn-delete-profile").click(function () {
+			var name = $(this).attr("data-profilename");
+			if (confirm("Are you sure you want to delete the active profile '" + name + "'?.\n" 
+			+ "This will remove ALL communication groups you have created using this profile.")) {
+				bm.module.delete_profile(name);
+				get_stored_profiles();
+			}
+		});
 	}
 }
 
@@ -131,7 +133,7 @@ $(document).ready(function () {
 		else if (profiles.hasOwnProperty(name)) { UI.formError("#add_profile_name", "Profile name exists already");	}
 		else if (!key) { UI.formError("#add_profile_keyselect", "No GPG private key selected");	}
 		else { bm.module.add_profile(name, key); get_stored_profiles();}
-		
+
 		return false;
 
 	});

@@ -17,9 +17,9 @@ var UI = {
 			{key: "users", icon: "icon-user", content: "Key Mappings"},
 			{key: "networks", icon: "icon-globe", content: "Social Networks"},
 			"sep",
-			{key: "settings", icon: "icon-wrench", content: "Settings"},
-			{key: "help", icon: "icon-question-sign", content: "Help"},
-			{key: "info", icon: "icon-info-sign", content: "About"}
+			{key: "settings", icon: "icon-wrench", content: "Settings"}
+			// {key: "help", icon: "icon-question-sign", content: "Help"},
+			// {key: "info", icon: "icon-info-sign", content: "About"}
 		],
 		menu = [];
 		for (var i = 0, len = mdata.length; i < len; i += 1) {
@@ -45,6 +45,11 @@ var UI = {
 
 	// Display an error message
 	error: function (msg) {
+		if ($("#errors").size() === 0) {
+			$("#app-content").prepend('<div class="alert alert-error alert-block" id="errormsg" style="display:none">'
+			+ '<a class="close" href="javascript:UI.emptyErrors()">×</a><h4 class="alert-heading">Error!</h4><div id="errors">'
+			+ '</div></div>');
+		}
 		$("#errors").append("<p>" + msg + "</p>");
 		$("#errormsg").show();
 	},

@@ -63,7 +63,7 @@ function handleFiles (files) {
 		f = files[i];
 		reader = new FileReader();
 		if (f.size > 10000000) {
-			error('The file <strong>' + escape(f.name) + '</strong> is too large to upload. Select a smaller file');
+			UI.error('The file <strong>' + escape(f.name) + '</strong> is too large to upload. Select a smaller file');
 			return;
 		}
 
@@ -73,7 +73,7 @@ function handleFiles (files) {
 			};
 			reader.readAsDataURL(f);
 		} else {
-			error('The file <strong>' + escape(f.name) + '</strong> does not match any allowed file type (image/*, video/*, audio/*). Detected type: "' + f.type + '"');
+			UI.error('The file <strong>' + escape(f.name) + '</strong> does not match any allowed file type (image/*, video/*, audio/*). Detected type: "' + f.type + '"');
 		}
 	}
 
@@ -114,7 +114,7 @@ $(document).ready(function() {
 				}
 			};
 
-			image.error = error;
+			image.error = UI.error;
 
 			image.success = function (xhr,	url) {
 				var statusicon = document.createElement("img");
@@ -142,8 +142,7 @@ $(document).ready(function() {
 			message.plaintext = plaintext;
 		}
 
-		if (!(message.plaintext || message.images)) {
-		} else {
+		if (message.plaintext || message.media) {
 			bm.share(groupid, message);
 		}
 
@@ -156,6 +155,11 @@ $(document).ready(function() {
 	});
 
 	var instances = bm.module.get_stored_instances();
+	if (instances.error === true) {
+		UI.error("Error loading instances:" + instances.error_msg);
+		return;
+	}
+	
 	if (Object.size(instances) > 0) {
 		$("#create_users_note").hide();
 		enableShareForm(true);
