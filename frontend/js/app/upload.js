@@ -96,6 +96,7 @@ function fileInputs (evt) {
 
 
 $(document).ready(function() {
+	UI.bmMenu("navbar", "upload");
 
 	$('#share-submit-btn').click(function () {
 		var images = [],

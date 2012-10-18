@@ -68,6 +68,7 @@ function parsePGPkey(data) {
 }
 
 $(document).ready(function () {
+	UI.bmMenu("navbar", "users");	
 	print_stored_map();
 
 	/** Create autocomplete cache for friends */

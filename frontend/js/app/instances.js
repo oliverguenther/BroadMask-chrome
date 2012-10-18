@@ -27,7 +27,7 @@ function instance_details(id) {
 		rows.push("<tr id=\"" + userid + "\" data-type=\"detail\" data-instance=\"" + id + "\"><td>" + cache.friends[userid] + "</td>");
 		rows.push("<td>" + userid + "</td><td>");
 		if (typeof gpg_map === 'object' && gpg_map[userid]) {
-			rows.push("<a href=\"javascript:upload_key('" + id + "','" + userid + "')\"><i class=\"icon-share\"></i> Publish (<small>PGP key: " + gpg_map[userid] + "</small>)</a><br/>");
+			rows.push("<a href=\"#\" class=\"upload_key\" data-instanceid=\"" + id + "\" data-userid=\"" + userid + "\"><i class=\"icon-share\"></i> Publish (<small>PGP key: " + gpg_map[userid] + "</small>)</a><br/>");
 			rows.push("<a href=\"#\" class=\"copysk_gpg\" data-id=\"" + userid + "\"><i class=\"icon-lock\"></i> Copy to clipboard (encrypted with PGP)</a></br><br/>");
 		}
 		rows.push("<a href=\"#\" class=\"copysk\" data-id=\"" + userid + "\"><i class=\"icon-warning-sign\"></i> Copy to clipboard (plaintext)</a>");
@@ -35,6 +35,15 @@ function instance_details(id) {
 	});
 	if (rows.length > 0) {
 		$("#instancedetail").append('<h3>Instance members</h3><table class="table table-bordered table-striped"><thead><tr><th>Name</th><th>Id</th><th>Options</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
+
+
+		$(".upload_key").click(function () {
+			var userid = $(this).attr("data-userid");
+			var instanceid = $(this).attr("data-instanceid");
+			upload_key(instanceid, userid);
+		});
+
+
 		$(".copysk").click(function () {
 			var userid = $(this).attr("data-id");
 			var instanceid = $(this).parent().parent().attr("data-instance");
@@ -79,12 +88,22 @@ function print_instances() {
 		rows.push("</td><td>");
 		rows.push((instance.max_users == 0) ? "-" : instance.max_users);
 		rows.push('</td><td class="">');
-		rows.push('<a href="javascript:instance_remove(\'' + instance.id + '\')"><i class="icon-trash"></i> Trash</a><br/>');
-		rows.push('<a href="javascript:instance_details(\'' + instance.id + '\')"><i class="icon-cog"></i> Details</a>');
+		rows.push('<a class="instance_details" data-id="'+instance.id+'"><i class="icon-cog"></i> Details</a><br/>');
+		rows.push('<a class="instance_remove" data-id="'+instance.id+'"><i class="icon-trash"></i> Trash</a><br/>');
 		rows.push('</td></tr>');
 	});
 	if (rows.length > 0) {
 		$("#instances").replaceWith('<table class="table table-bordered table-striped"><thead><tr><th>Instance</th><th>Type</th><th>Size</th><th>Options</th></tr></thead><tbody>' + rows.join("") + '</tbody></table>');
+
+		// Add Instance button listeners
+		$(".instance_details").click(function() {
+			var id = $(this).attr("data-id");
+			instance_details(id);
+		});
+		$(".instance_remove").click(function() {
+			var id = $(this).attr("data-id");
+			instance_remove(id);
+		});
 	} else {
 		$("#instances").replaceWith('<p class="light">No instances have been created</p>');
 	}
@@ -148,6 +167,7 @@ function upload_key(instanceid, userid) {
 }
 
 $(document).ready(function () {
+	UI.bmMenu("navbar", "instances");
 	$("#instances").append('<div class="alert alert-info"><strong>Loading</strong> Updating cache, fetching instances</div>');
 	$("#create_instance :input").attr("disabled", true);
 	bm.osn.checkCache(function(result) {

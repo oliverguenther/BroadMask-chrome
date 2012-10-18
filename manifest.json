@@ -1,16 +1,19 @@
 {
+	"manifest_version": 2,
 	"name": "__MSG_extName__",
 	"version": "0.3.1",
 	"description": "__MSG_title__",
-	"icons": { 
+	"icons": {
 		"16": "frontend/img/bm16.png",
 		"48": "frontend/img/bm48.png",
-    "128": "frontend/img/bm128.png" 
+	    "128": "frontend/img/bm128.png"
 	},
-	"background_page": "backend/background.html",
+	"background": {
+		"page": "backend/background.html"
+	},
 	"options_page": "frontend/app/settings.html",
 	"browser_action": {
-		"default_title": "Broadmask", 
+		"default_title": "Broadmask",
 		"default_icon": "frontend/img/bm48.png"
 	},
 	"content_scripts": [
@@ -29,5 +32,10 @@
 		"https://*.google.com/*",
 		"https://*.facebook.com/*",
 		"http://pgp.mit.edu:11371/pks/lookup*"
-  	]
+	],
+	"plugins": [
+    { "path": "plugin/Broadmask.plugin", "public": false },
+    { "path": "plugin/npBroadmask.so", "public": false }
+	]
 }
+

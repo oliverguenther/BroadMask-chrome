@@ -21,7 +21,6 @@ chrome.extension.onRequest.addListener(function (request, sender, responseCallba
 
 // Search for BM IDs in Stream Messages
 var handleMessage = function (streamElement, message) {
-	"use strict";
 	var port = chrome.extension.connect({name: "fbcontentscript"});
 	port.postMessage(message);
 
@@ -33,6 +32,10 @@ var handleMessage = function (streamElement, message) {
 					streamElement.removeChild(streamElement.lastChild);
 				}
 			}
+
+			// mark as injected
+			streamElement.setAttribute("bm-injected", true);
+			
 
 			// check response for data
 			if (response.urls) {
@@ -61,7 +64,6 @@ var handleMessage = function (streamElement, message) {
 						fullwrap.appendChild(full);
 						streamElement.appendChild(fullwrap);
 					}
-					streamElement.setAttribute("bm-injected", true);
 				}
 			} else if (response.plaintext) {
 				
@@ -72,41 +74,45 @@ var handleMessage = function (streamElement, message) {
 					streamElement.insertBefore(textnode, streamElement.firstChild);
 				}
 				streamElement.appendChild(textnode);
-				streamElement.setAttribute("bm-injected", true);
 			} else if (response.error) {
 				var errnode = document.createElement("p");
 				errnode.innerText = response.error_msg.split("\n").join("<br/>");
 				streamElement.appendChild(errnode);
-				streamElement.setAttribute("bm-injected", true);
 			}
 		}
 	});
 };
 
 var refresh = function () {
-	"use strict";
 	var bmtag, pgptag, it, story_data, mb, bm_message,
-	stories = document.getElementsByClassName("uiStreamStory");
+	stories = document.getElementsByClassName("timelineUnitContainer");
+
 	
 	for (var i = 0, len = stories.length; i < len; i++) {
 		try {
-		var story_input = stories[i].querySelector("form.commentable_item")[2].getAttribute("value");
-		story_data = JSON.parse(story_input);
-		} catch (e) { /* no story exists to be parsed */ continue; }
+		var full_link = stories[i].querySelector("a.uiLinkSubtle");
+		if (!full_link) { /* no user posted story */ continue; }
+		// Split on full url ?story_fbid=(wanted_id)&id=(actor_id)
+		var post_id = full_link.href.match(/=(\d+)&id/)[1];
+		} catch (e) { 
+			// no story exists to be parsed
+			console.debug("Exception " + e + " in content " + full_link.href);
+			continue; 
+		}
 		// skip all posts not created by our app
 		// if (story_data.source_app_id !== "281109321931593") {
 		// 	return;
 		// }
-		mb = stories[i].getElementsByClassName("messageBody")[0];
+		var mb = stories[i].querySelector("span.userContent");
 
 		if (mb && !mb.hasAttribute("bm-injected")) {
-			it = mb.innerText;
-			if (it !== null && it !== 'undefined') {
+			it = mb.innerHTML;
+			if (it !== null && typeof it !== 'undefined') {
 				// check for broadmask post
 				bmtag = it.indexOf('=== BEGIN BM DATA ===');
 				// check for GPG post
 				pgptag = it.indexOf('-----BEGIN PGP MESSAGE-----');
-				bm_message = {id: story_data.target_fbid};
+				bm_message = {id: post_id};
 				if (bmtag !== -1) {
 					bm_message.type = "broadmask";
 					handleMessage(mb, bm_message);
@@ -121,4 +127,7 @@ var refresh = function () {
 	}
 };
 
-window.setInterval(refresh, 1000);
+if (window.frameElement === null) {
+	console.log("FBCS setting interval from " + window.location);
+	window.setInterval(refresh, 1000);
+}

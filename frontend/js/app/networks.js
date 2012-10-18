@@ -25,6 +25,7 @@ function check_osn_auth() {
 }
 
 $(document).ready(function () {
+	UI.bmMenu("navbar", "networks");	
 	check_host_auth();
 	check_osn_auth();
 

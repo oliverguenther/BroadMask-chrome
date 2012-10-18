@@ -1,5 +1,10 @@
 html,body { background: #E7E7E7 }
 
+a:hover {
+ cursor:pointer;
+}
+
+
 #header {
 	width: 900px;
 	margin: 0 auto;

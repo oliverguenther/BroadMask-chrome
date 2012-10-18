@@ -82,6 +82,8 @@ function update_keyselect() {
 }
 
 $(document).ready(function () {
+	UI.bmMenu("navbar", "settings");	
+
 	// check auth status
 	check_host_auth();
 	check_osn_auth();
