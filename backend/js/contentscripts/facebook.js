@@ -1,3 +1,5 @@
+(function () {
+
 // Replace selection for text encryption
 function replaceSelection(newdata) {
 	"use strict";
@@ -20,7 +22,7 @@ chrome.extension.onRequest.addListener(function (request, sender, responseCallba
 
 
 // Search for BM IDs in Stream Messages
-var handleMessage = function (streamElement, message) {
+function handleMessage (streamElement, message) {
 	var port = chrome.extension.connect({name: "fbcontentscript"});
 	port.postMessage(message);
 
@@ -83,21 +85,45 @@ var handleMessage = function (streamElement, message) {
 	});
 };
 
-var refresh = function () {
+function parseStreamMessage(mb, post_id) {
+		if (!mb || mb.hasAttribute("bm-injected")) {
+			return;
+		}
+
+		var it = mb.innerHTML;
+		if (it !== null && typeof it !== 'undefined') {
+			// check for broadmask post
+			bmtag = it.indexOf('=== BEGIN BM DATA ===');
+			// check for GPG post
+			pgptag = it.indexOf('-----BEGIN PGP MESSAGE-----');
+			bm_message = {id: post_id};
+			if (bmtag !== -1) {
+				bm_message.type = "broadmask";
+				handleMessage(mb, bm_message);
+			} else if (pgptag !== -1) {
+				bm_message.type = "pgp";
+				// set message as handled
+				mb.setAttribute("bm-injected", true);
+				handleMessage(mb, bm_message);
+			}
+		}
+}
+
+function parseTimelineProfile() {
+	console.debug("parseTimelineProfile");
 	var bmtag, pgptag, it, story_data, mb, bm_message,
 	stories = document.getElementsByClassName("timelineUnitContainer");
 
-	
 	for (var i = 0, len = stories.length; i < len; i++) {
 		try {
 		var full_link = stories[i].querySelector("a.uiLinkSubtle");
 		if (!full_link) { /* no user posted story */ continue; }
 		// Split on full url ?story_fbid=(wanted_id)&id=(actor_id)
 		var post_id = full_link.href.match(/=(\d+)&id/)[1];
-		} catch (e) { 
+		} catch (e) {
 			// no story exists to be parsed
 			console.debug("Exception " + e + " in content " + full_link.href);
-			continue; 
+			continue;
 		}
 		// skip all posts not created by our app
 		// if (story_data.source_app_id !== "281109321931593") {
@@ -105,25 +131,36 @@ var refresh = function () {
 		// }
 		var mb = stories[i].querySelector("span.userContent");
 
-		if (mb && !mb.hasAttribute("bm-injected")) {
-			it = mb.innerHTML;
-			if (it !== null && typeof it !== 'undefined') {
-				// check for broadmask post
-				bmtag = it.indexOf('=== BEGIN BM DATA ===');
-				// check for GPG post
-				pgptag = it.indexOf('-----BEGIN PGP MESSAGE-----');
-				bm_message = {id: post_id};
-				if (bmtag !== -1) {
-					bm_message.type = "broadmask";
-					handleMessage(mb, bm_message);
-				} else if (pgptag !== -1) {
-					bm_message.type = "pgp";
-					// set message as handled
-					mb.setAttribute("bm-injected", true);
-					handleMessage(mb, bm_message);
-				}
-			}
+		parseStreamMessage(mb, post_id);
+	}
+}
+
+function parseStream() {
+	console.debug("parseStream");
+	var stories = document.getElementsByClassName("uiStreamStory");
+	for (var i = 0, len = stories.length; i < len; i++) {
+		var full_link = stories[i].querySelector(".uiStreamSource a");
+		if (!full_link) { continue; }
+		try {
+			var post_id = full_link.href.match(/=(\d+)&id/)[1];
+			var mb = stories[i].querySelector("span.userContent");
+			parseStreamMessage(mb, post_id);
+		} catch (e) {
+			console.debug("Exception " + e + " in content " + full_link.href);
+			continue;
 		}
+
+	}
+}
+
+var refresh = function () {
+	// if (window.location.indexOf("facebook.com/profile.php") !== -1) {
+	if (document.body.className.indexOf("timelineLayout") !== -1) {
+		// Parse posts from Timeline if Timeline layout
+		parseTimelineProfile();
+	} else if (document.body.className.indexOf("home") !== -1) {
+		// Parse front page for stream posts
+		parseStream();
 	}
 };
 
@@ -131,3 +168,4 @@ if (window.frameElement === null) {
 	console.log("FBCS setting interval from " + window.location);
 	window.setInterval(refresh, 1000);
 }
+})();
